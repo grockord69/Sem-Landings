@@ -1,0 +1,16 @@
+{
+  "name": "sem-landings/innovapro",
+  "description": "Landing SEM PHP con persistencia MySQL y notificaciones SMTP.",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": ">=8.2",
+    "ext-iconv": "*",
+    "ext-openssl": "*",
+    "ext-pdo": "*",
+    "ext-pdo_mysql": "*",
+    "ext-session": "*",
+    "phpmailer/phpmailer": "^7.1"
+  },
+  "config": {"sort-packages": true, "allow-plugins": false}
+}

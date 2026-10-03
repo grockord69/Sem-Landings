@@ -1,0 +1,17 @@
+# Apache 2.4 / LiteSpeed Enterprise. En OpenLiteSpeed ver docs/DEPLOY.md:
+# OLS no aplica todas las directivas .htaccess; la seguridad PHP no depende de ellas.
+Options -Indexes
+DirectoryIndex index.php
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^(?:src|config|vendor|var|sql|bin|docs|tests|templates|deployment)(?:/|$) - [F,L]
+RewriteRule (^|/)\. - [F,L]
+</IfModule>
+<FilesMatch "\.(?:sql|log|ini|env|bak|md|json|lock)$">
+Require all denied
+</FilesMatch>
+<IfModule mod_headers.c>
+<FilesMatch "\.(?:css|js|png|webp)$">
+Header set Cache-Control "public, max-age=86400"
+</FilesMatch>
+</IfModule>

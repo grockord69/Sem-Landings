@@ -1,0 +1,62 @@
+'use strict';
+const {test} = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const {webcrypto, createHash} = require('node:crypto');
+const {execFileSync} = require('node:child_process');
+const config = JSON.parse(execFileSync(process.env.PHP_BINARY || 'php', ['-r', "echo json_encode(require 'config/config.example.php');"], {encoding:'utf8'}));
+const source = fs.readFileSync('public/assets/js/tracking.js', 'utf8');
+function fixture(granted = false, storage = new Map(), crypto = webcrypto) {
+  const calls = [];
+  const window = {INNOVA:{ads:config.ads,tracking:true}, InnovaConsent:{canUseUserData:()=>granted},
+    gtag:(...args)=>{calls.push(args); if(args[0]==='event') queueMicrotask(args[2].event_callback);}};
+  vm.runInNewContext(source, {window,crypto,TextEncoder,URLSearchParams,document:{referrer:'https://example.test/'},location:{search:'?utm_campaign=demo&gclid=click',href:'https://demo.innovapro.es/?utm_campaign=demo&gclid=click'},
+    sessionStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},setTimeout,clearTimeout});
+  return {ads:window.InnovaAds,calls,revoke:()=>{granted=false;},storage};
+}
+test('IDs reales y valor WhatsApp en la única configuración del cliente', () => {
+  assert.equal(config.ads.id,'AW-763034950');
+  assert.deepEqual(config.ads.conversions,{form:'AW-763034950/bu_ECPvC9PkBEMb66-sC',phone:'AW-763034950/evT9CI2-wfwZEMb66-sC',whatsapp:'AW-763034950/a58xCJOfqo8dEMb66-sC'});
+  assert.equal(config.ads.whatsapp_value,1); assert.equal(config.ads.currency,'EUR');
+});
+test('denied conserva conversión estándar, transaction_id y dedupe', async () => {
+  const f=fixture();
+  await Promise.all([f.ads.convert('form',12,{email:'person@example.test',phone:'600111222'}),f.ads.convert('form',12)]);
+  const events=f.calls.filter(c=>c[0]==='event');
+  assert.equal(events.length,1); assert.equal(events[0][2].transaction_id,'12');
+  assert.equal(events[0][2].send_to,config.ads.conversions.form);
+  assert.equal(f.calls.filter(c=>c[1]==='user_data').length,0);
+  const reload=fixture(false,f.storage); await reload.ads.convert('form',12);
+  assert.equal(reload.calls.length,0);
+});
+test('granted normaliza y hashea solo email y teléfono E.164',async()=>{
+  const f=fixture(true); await f.ads.convert('form',13,{email:' TEST.Person@GMAIL.COM ',phone:'600 111 222',name:'never sent'});
+  const data=f.calls.find(c=>c[1]==='user_data')[2];
+  assert.equal(data.sha256_email_address,createHash('sha256').update('testperson@gmail.com').digest('hex'));
+  assert.equal(data.sha256_phone_number,createHash('sha256').update('+34600111222').digest('hex'));
+  assert.deepEqual(Object.keys(data).sort(),['sha256_email_address','sha256_phone_number']);
+  assert.equal(Object.keys(f.calls.at(-1)[2]).length,0);
+});
+test('revocación durante hash omite user_data y conserva conversión',async()=>{
+  let f;
+  const crypto={subtle:{digest:async(...args)=>{f.revoke();return webcrypto.subtle.digest(...args);}}};
+  f=fixture(true,new Map(),crypto); await f.ads.convert('form',14,{email:'person@example.test',phone:'600111222'});
+  assert.equal(f.calls.filter(c=>c[1]==='user_data').length,0);
+  assert.equal(f.calls.filter(c=>c[0]==='event').length,1);
+});
+test('teléfono/WhatsApp no llevan Enhanced Conversions',async()=>{
+  const f=fixture(true); await f.ads.convert('phone','phone-1'); await f.ads.convert('whatsapp','wa-1');
+  const events=f.calls.filter(c=>c[0]==='event');
+  assert.equal(events[0][2].send_to,config.ads.conversions.phone);
+  assert.equal(events[1][2].send_to,config.ads.conversions.whatsapp);
+  assert.equal(events[1][2].value,1); assert.equal(events[1][2].currency,'EUR');
+  assert.equal(f.calls.filter(c=>c[1]==='user_data').length,0);
+});
+test('ausencia de callback termina mediante timeout',async()=>{
+  const f=fixture();
+  // Nuevo contexto con gtag que no confirma: la navegación tiene respaldo local.
+  const window={INNOVA:{ads:config.ads,tracking:true},InnovaConsent:{canUseUserData:()=>false},gtag:()=>{}};
+  vm.runInNewContext(source,{window,crypto:webcrypto,TextEncoder,URLSearchParams,sessionStorage:{getItem:()=>null,setItem:()=>{}},setTimeout,clearTimeout});
+  assert.equal(await window.InnovaAds.convert('phone','timeout'),'timeout');
+});
