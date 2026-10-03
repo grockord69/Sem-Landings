@@ -35,7 +35,7 @@ return [
             'phone' => 'AW-763034950/evT9CI2-wfwZEMb66-sC',
             'whatsapp' => 'AW-763034950/a58xCJOfqo8dEMb66-sC',
         ],
-        'whatsapp_value' => 1.0, 'currency' => 'EUR',
+        'values' => ['form' => 30.0, 'phone' => 10.0, 'whatsapp' => 10.0], 'currency' => 'EUR',
     ],
     'consent' => ['version' => 'innova-cmp-2', 'cookie_days' => 180],
     'legal' => [

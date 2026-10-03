@@ -15,10 +15,10 @@ function fixture(granted = false, storage = new Map(), crypto = webcrypto) {
     sessionStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},setTimeout,clearTimeout});
   return {ads:window.InnovaAds,calls,revoke:()=>{granted=false;},storage};
 }
-test('IDs reales y valor WhatsApp en la única configuración del cliente', () => {
+test('IDs reales y valores de conversión en la única configuración del cliente', () => {
   assert.equal(config.ads.id,'AW-763034950');
   assert.deepEqual(config.ads.conversions,{form:'AW-763034950/bu_ECPvC9PkBEMb66-sC',phone:'AW-763034950/evT9CI2-wfwZEMb66-sC',whatsapp:'AW-763034950/a58xCJOfqo8dEMb66-sC'});
-  assert.equal(config.ads.whatsapp_value,1); assert.equal(config.ads.currency,'EUR');
+  assert.deepEqual(config.ads.values,{form:30,phone:10,whatsapp:10}); assert.equal(config.ads.currency,'EUR');
 });
 test('denied conserva conversión estándar, transaction_id y dedupe', async () => {
   const f=fixture();
@@ -26,6 +26,7 @@ test('denied conserva conversión estándar, transaction_id y dedupe', async () 
   const events=f.calls.filter(c=>c[0]==='event');
   assert.equal(events.length,1); assert.equal(events[0][2].transaction_id,'12');
   assert.equal(events[0][2].send_to,config.ads.conversions.form);
+  assert.equal(events[0][2].value,30); assert.equal(events[0][2].currency,'EUR');
   assert.equal(f.calls.filter(c=>c[1]==='user_data').length,0);
   const reload=fixture(false,f.storage); await reload.ads.convert('form',12);
   assert.equal(reload.calls.length,0);
@@ -49,8 +50,9 @@ test('teléfono/WhatsApp no llevan Enhanced Conversions',async()=>{
   const f=fixture(true); await f.ads.convert('phone','phone-1'); await f.ads.convert('whatsapp','wa-1');
   const events=f.calls.filter(c=>c[0]==='event');
   assert.equal(events[0][2].send_to,config.ads.conversions.phone);
+  assert.equal(events[0][2].value,10); assert.equal(events[0][2].currency,'EUR');
   assert.equal(events[1][2].send_to,config.ads.conversions.whatsapp);
-  assert.equal(events[1][2].value,1); assert.equal(events[1][2].currency,'EUR');
+  assert.equal(events[1][2].value,10); assert.equal(events[1][2].currency,'EUR');
   assert.equal(f.calls.filter(c=>c[1]==='user_data').length,0);
 });
 test('ausencia de callback termina mediante timeout',async()=>{

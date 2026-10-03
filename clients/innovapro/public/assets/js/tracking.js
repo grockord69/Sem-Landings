@@ -41,7 +41,8 @@
         const timer = setTimeout(() => finish('timeout'), 700);
         const event = {send_to: config.ads.conversions[kind], event_callback: () => finish('callback'), event_timeout: 600};
         if (kind === 'form') event.transaction_id = String(id);
-        if (kind === 'whatsapp') { event.value = config.ads.whatsapp_value; event.currency = config.ads.currency; }
+        const value = Number(config.ads.values?.[kind]);
+        if (Number.isFinite(value)) { event.value = value; event.currency = config.ads.currency; }
         try {
           if (userData) window.gtag('set', 'user_data', userData);
           window.gtag('event', 'conversion', event);
