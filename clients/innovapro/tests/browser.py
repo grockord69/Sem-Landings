@@ -81,6 +81,7 @@ with sync_playwright() as pl:
         ev = events(page)
         config = page.evaluate('INNOVA.ads')
         check(len(ev) == 1 and ev[0]['send_to'] == config['conversions']['form'] and ev[0]['transaction_id'] == '42', 'form una conversión con lead_id: ' + consent)
+        check(ev[0]['value'] == 30 and ev[0]['currency'] == 'EUR', 'form mantiene valor 30 EUR: ' + consent)
         user_data = page.evaluate("__qa.calls.filter(c=>c[0]==='set'&&c[1]==='user_data'&&Object.keys(c[2]).length)")
         if consent == 'accepted':
             check(len(user_data) == 1 and user_data[0][2]['sha256_email_address'] == hashlib.sha256(b'person@example.test').hexdigest() and user_data[0][2]['sha256_phone_number'] == hashlib.sha256(b'+34600111222').hexdigest(), 'EC granted normalizadas, hash email/teléfono')
@@ -139,8 +140,8 @@ with sync_playwright() as pl:
             ev = events(page)
             config = page.evaluate('INNOVA.ads')
             check(len(ev) == 1 and ev[0]['send_to'] == config['conversions'][kind], f'{kind} manejador único, callback={callback}')
+            check(ev[0]['value'] == 10 and ev[0]['currency'] == 'EUR', f'{kind} mantiene valor 10 EUR')
             if kind == 'whatsapp':
-                check(ev[0]['value'] == 1 and ev[0]['currency'] == 'EUR', 'WhatsApp mantiene valor/moneda')
                 popups = [p for p in page.context.pages if p != page]
                 check(len(popups) == 1 and popups[0].url.startswith('https://wa.me/'), f'WhatsApp navega una vez, callback={callback}')
             else:
