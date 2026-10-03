@@ -1,0 +1,62 @@
+name: Package InnovaPro upload
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'clients/innovapro/**'
+      - '.github/workflows/package-innovapro.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clients/innovapro
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql, openssl, iconv, session
+          coverage: none
+          tools: composer:v2
+
+      - name: Install production dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress
+
+      - name: Build upload package
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/innovapro-upload"
+          mkdir -p "$OUT"
+          cp -a public src templates config sql bin composer.json composer.lock vendor "$OUT"/
+          cat > "$OUT/README-UPLOAD.txt" <<'EOF'
+          InnovaPro · paquete de producción
+
+          Document root del subdominio:
+            public/
+
+          Antes de publicar:
+          1. Copiar config/config.example.php a config/config.php.
+          2. Rellenar BD, SMTP, destinatarios, usuario admin y legales pendientes.
+          3. Crear la BD e importar sql/schema.sql.
+          4. Apuntar demo.innovapro.es al directorio public/.
+          5. Ejecutar: php bin/console.php check
+          6. Validar formulario, SMTP, panel, CMP, Tag Assistant y las 3 conversiones.
+
+          Este paquete ya incluye vendor/ y no necesita composer install en el servidor.
+          EOF
+
+      - name: Upload production package
+        uses: actions/upload-artifact@v4
+        with:
+          name: innovapro-upload
+          path: ${{ runner.temp }}/innovapro-upload
+          if-no-files-found: error
+          retention-days: 14
