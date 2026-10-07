@@ -40,7 +40,7 @@ Recomendado:
 - puerto 587 + `tls` para STARTTLS; o
 - puerto 465 + `ssl` para TLS implícito.
 
-El lead se inserta primero. Después se intenta el correo y se actualiza `email_status` a `sent` o `error`.
+El lead se inserta primero. Después se intenta el correo y se actualiza `email_status` a `sent` o `error`. La aplicación rechaza SMTP sin cifrado: usa únicamente `tls` (STARTTLS/587) o `ssl` (TLS implícito/465).
 
 ## Panel
 
