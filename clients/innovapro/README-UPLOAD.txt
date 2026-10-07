@@ -4,7 +4,8 @@ Este directorio es el contenido completo que debe subirse al document root de de
 No usa Composer, no necesita cron y no requiere colocar carpetas fuera de httpdocs.
 
 1. Sube todos los archivos y carpetas al document root del subdominio.
-2. Copia includes/config.example.php como includes/config.php.
+2. Edita includes/config.php, que ya viene creado a partir del ejemplo.
+   includes/config.example.php queda como copia de referencia.
 3. Completa en includes/config.php:
    - base de datos;
    - SMTP y destinatarios;
