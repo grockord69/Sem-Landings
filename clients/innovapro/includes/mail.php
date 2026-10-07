@@ -55,12 +55,23 @@ function smtp_expect($socket, array $expected): string
     return $response;
 }
 
+function smtp_write_all($socket, string $data): void
+{
+    $length = strlen($data);
+    $offset = 0;
+
+    while ($offset < $length) {
+        $written = fwrite($socket, substr($data, $offset));
+        if ($written === false || $written === 0) {
+            throw new RuntimeException('SMTP_WRITE_FAILED');
+        }
+        $offset += $written;
+    }
+}
+
 function smtp_command($socket, string $command, array $expected): string
 {
-    $written = fwrite($socket, $command . "\r\n");
-    if ($written === false || $written < strlen($command) + 2) {
-        throw new RuntimeException('SMTP_WRITE_FAILED');
-    }
+    smtp_write_all($socket, $command . "\r\n");
     return smtp_expect($socket, $expected);
 }
 
@@ -188,10 +199,7 @@ function send_lead_email(array $lead): void
 
         smtp_command($socket, 'DATA', [354]);
         $message = preg_replace('/(?m)^\./', '..', smtp_message($lead, $recipients));
-        $written = fwrite($socket, $message . "\r\n.\r\n");
-        if ($written === false) {
-            throw new RuntimeException('SMTP_WRITE_FAILED');
-        }
+        smtp_write_all($socket, $message . "\r\n.\r\n");
         smtp_expect($socket, [250]);
         smtp_command($socket, 'QUIT', [221]);
     } finally {
