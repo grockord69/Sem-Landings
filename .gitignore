@@ -1,14 +1,11 @@
 .codex-remote-attachments/
 .local/
-**/vendor/
-**/node_modules/
-**/config/config.php
+**/includes/config.php
 **/.env
 **/.env.*
 **/*.log
 **/*.sql.gz
 **/*dump*.sql
-**/var/
 **/__pycache__/
 **/test-results/
 **/playwright-report/

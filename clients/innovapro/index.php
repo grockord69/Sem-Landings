@@ -1,18 +1,17 @@
 <?php
 declare(strict_types=1);
-require __DIR__.'/../src/bootstrap.php';
-require __DIR__.'/../src/view.php';
-use function Innova\{head,header_view,footer_view,cfg,esc,phone_link,whatsapp_button};
+require __DIR__ . '/includes/bootstrap.php';
+require __DIR__ . '/includes/layout.php';
 $requestId = bin2hex(random_bytes(16));
-head('Depilación profesional · Compra, alquiler y financiación | InnovaPro',true);
-header_view();
+page_head('Depilación profesional · Compra, alquiler y financiación | InnovaPro', true);
+site_header();
 ?>
 <main id="contenido">
 <section class="hero wrap" aria-labelledby="hero-title">
   <div class="hero-copy"><p class="eyebrow">Tecnología SHR y láser diodo · Gama InnovaPro</p><h1 id="hero-title"><span>Equipos de depilación profesional</span> para hacer crecer tu centro</h1><p class="hero-description">Te ayudamos a elegir el equipo adecuado, probarlo y decidir entre <strong>compra, alquiler o financiación.</strong></p></div>
   <div class="hero-visual"><img src="/assets/img/gama-shr.webp" srcset="/assets/img/gama-shr-small.webp 800w, /assets/img/gama-shr.webp 1500w" sizes="(max-width: 760px) 100vw, 64vw" width="1500" height="871" fetchpriority="high" alt="Gama de equipos de depilación profesional InnovaPro"><p class="image-caption">Una gama de soluciones. Un equipo que te ayuda a elegir.</p></div>
   <aside class="hero-contact" id="contacto" aria-labelledby="form-title"><p class="commercial-options">Compra · Alquiler · Financiación</p><div class="form-card"><p class="eyebrow">Demostración gratuita</p><h2 id="form-title">Prueba el equipo <br> antes de decidir</h2><p class="form-intro">No necesitas saber qué modelo elegir. Te asesoramos.</p>
-  <form id="lead-form" method="post" action="/api/lead.php" novalidate>
+  <form id="lead-form" method="post" action="/form.php" novalidate>
     <input type="hidden" name="request_id" value="<?=esc($requestId)?>">
     <label class="field" for="name">Nombre<input id="name" name="name" autocomplete="name" maxlength="120" required aria-describedby="error-name"><span class="field-error" id="error-name"></span></label>
     <label class="field" for="phone">Teléfono<input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="40" required aria-describedby="error-phone"><span class="field-error" id="error-phone"></span></label>
@@ -43,4 +42,4 @@ header_view();
 <section class="commitment section"><div class="wrap"><h2>Compromiso total</h2><div class="commitment-grid"><article><h3>Soporte técnico</h3><p>Atención profesional para resolver dudas y acompañarte en el uso del equipo.</p></article><article><h3>Consumibles</h3><p>Repuestos y consumibles adecuados para mantener tu aparatología.</p></article><article><h3>Garantía</h3><p>Información clara sobre la cobertura y las condiciones aplicables a tu equipo.</p></article></div></div></section>
 <section class="final-cta wrap section" aria-labelledby="final-title"><div><p class="eyebrow">Da el siguiente paso</p><h2 id="final-title">Prueba antes de decidir.</h2><p>Solicita tu demostración y descubre qué equipo encaja mejor con tu centro.</p></div><div class="final-actions"><a href="#contacto" class="button button-primary" data-form-focus>Solicitar mi demo gratuita <span aria-hidden="true">→</span></a><div><a href="<?=esc(phone_link())?>" data-contact="phone">Llamar</a><span aria-hidden="true"> · </span><?=whatsapp_button('text-link')?></div></div></section>
 </main>
-<?php footer_view(true); ?>
+<?php site_footer(true); ?>

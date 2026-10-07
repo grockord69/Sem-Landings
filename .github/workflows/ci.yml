@@ -1,14 +1,18 @@
 name: SEM Landings CI
+
 on:
   push:
-    branches: [main, 'codex/**']
+    branches: [main, 'refactor/**', 'codex/**']
   pull_request:
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
   group: sem-ci-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   discover:
     runs-on: ubuntu-latest
@@ -22,13 +26,14 @@ jobs:
           python - <<'PY'
           import json, os
           from pathlib import Path
-          clients = sorted(p.parent.name for p in Path('clients').glob('*/composer.json'))
+          clients = sorted(p.parent.name for p in Path('clients').glob('*/client.json'))
           assert clients, 'No client applications found'
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               output.write('clients=' + json.dumps(clients) + '\n')
           PY
       - name: Check committed files and secrets
         run: python scripts/check_hygiene.py
+
   unit:
     name: ${{ matrix.client }} · PHP ${{ matrix.php }} · lint/unit/tracking
     needs: discover
@@ -46,22 +51,19 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: pdo_mysql, openssl, iconv, session
+          extensions: pdo_mysql, openssl, iconv
           coverage: none
-          tools: composer:v2
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: composer validate --strict
-      - run: composer install --no-interaction --prefer-dist --no-progress
-      - run: composer audit --no-interaction
       - name: PHP and JavaScript syntax
         run: |
           set -euo pipefail
-          while IFS= read -r -d '' file; do php -l "$file" >/dev/null; done < <(find src bin config public templates tests -name '*.php' -print0)
-          for file in public/assets/js/*.js tests/*.cjs; do node --check "$file"; done
+          while IFS= read -r -d '' file; do php -l "$file" >/dev/null; done < <(find . -name '*.php' -print0)
+          for file in assets/js/*.js tests/*.cjs; do node --check "$file"; done
       - run: php tests/unit.php
       - run: node --test tests/tracking.cjs
+
   integration:
     name: ${{ matrix.client }} · MariaDB/SMTP/HTTP/Chromium
     needs: discover
@@ -86,20 +88,18 @@ jobs:
           --health-cmd="healthcheck.sh --connect --innodb_initialized"
           --health-interval=5s --health-timeout=5s --health-retries=20
     env:
-      SEM_CONFIG: /tmp/sem-config.php
-      TEST_SMTP_DIR: /tmp/sem-smtp
+      INNOVAPRO_CONFIG: /tmp/innovapro-config.php
+      TEST_SMTP_DIR: /tmp/innovapro-smtp
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: pdo_mysql, openssl, iconv, session
+          extensions: pdo_mysql, openssl, iconv
           coverage: none
-          tools: composer:v2
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: composer install --no-interaction --prefer-dist --no-progress
       - name: Install browser dependencies
         run: |
           python -m pip install -r tests/requirements.txt
@@ -107,36 +107,41 @@ jobs:
       - name: Configure private fixtures and authenticated SMTP
         run: |
           mkdir -p "$TEST_SMTP_DIR"
-          openssl req -x509 -newkey rsa:2048 -nodes -keyout "$TEST_SMTP_DIR/key.pem" -out "$TEST_SMTP_DIR/cert.pem" -days 2 -subj /CN=localhost -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1'
-          php tests/configure.php "$SEM_CONFIG"
-          python tests/smtp_server.py --dir "$TEST_SMTP_DIR" >/tmp/sem-smtp-server.log 2>&1 &
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout "$TEST_SMTP_DIR/key.pem" -out "$TEST_SMTP_DIR/cert.pem" \
+            -days 2 -subj /CN=localhost \
+            -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1'
+          php tests/configure.php "$INNOVAPRO_CONFIG"
+          python tests/smtp_server.py --dir "$TEST_SMTP_DIR" >/tmp/innovapro-smtp.log 2>&1 &
           for i in {1..20}; do
             if python -c "import socket;socket.create_connection(('127.0.0.1',1025),1).close()"; then break; fi
             sleep 1
           done
-      - name: Schema, persistence, idempotency, SMTP states and real STARTTLS
+      - name: Schema, idempotency and real SMTP
         run: php -d openssl.cafile="$TEST_SMTP_DIR/cert.pem" tests/integration.php
       - name: Start HTTP server
         run: |
-          PHP_CLI_SERVER_WORKERS=4 php -d openssl.cafile="$TEST_SMTP_DIR/cert.pem" -S 127.0.0.1:8765 -t public >/tmp/sem-php.log 2>&1 &
+          PHP_CLI_SERVER_WORKERS=4 php -d openssl.cafile="$TEST_SMTP_DIR/cert.pem" \
+            -S 127.0.0.1:8765 tests/router.php >/tmp/innovapro-php.log 2>&1 &
           for i in {1..20}; do
             if curl -fsS http://127.0.0.1:8765/ >/dev/null; then exit 0; fi
             sleep 1
           done
+          cat /tmp/innovapro-php.log
           exit 1
-      - name: Real HTTP contracts and protected administration
+      - name: HTTP contracts and server-protected admin
         run: python tests/http_contract.py --base http://127.0.0.1:8765 --smtp-dir "$TEST_SMTP_DIR"
-      - name: Browser responsive, form, conversion and consent contracts
-        run: python tests/browser.py --base http://127.0.0.1:8765 --out /tmp/sem-browser
-      - name: Screenshots and browser results
+      - name: Browser responsive, consent and tracking contracts
+        run: python tests/browser.py --base http://127.0.0.1:8765 --out /tmp/innovapro-browser
+      - name: Browser screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.client }}-browser-qa
-          path: /tmp/sem-browser
+          name: ${{ matrix.client }}-simple-browser-qa
+          path: /tmp/innovapro-browser
           retention-days: 14
       - name: Safe fixture logs on failure
         if: failure()
         run: |
-          cat /tmp/sem-php.log || true
-          cat /tmp/sem-smtp-server.log || true
+          cat /tmp/innovapro-php.log || true
+          cat /tmp/innovapro-smtp.log || true

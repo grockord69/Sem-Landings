@@ -1,5 +1,5 @@
 """Servidor SMTP exclusivo de la suite: STARTTLS y AUTH reales, mensajes sintéticos."""
-import argparse, base64, email, json, socketserver, ssl, threading, time
+import argparse, base64, email, json, socketserver, ssl, time
 from email import policy
 from pathlib import Path
 
@@ -17,8 +17,10 @@ class Handler(socketserver.BaseRequestHandler):
         stream = connection.makefile('rb')
         secured = authenticated = False
         recipients = []
+
         def send(line):
             connection.sendall((line + '\r\n').encode())
+
         send('220 localhost test SMTP')
         try:
             while True:
@@ -72,7 +74,13 @@ class Handler(socketserver.BaseRequestHandler):
                         lines.append(raw[1:] if raw.startswith(b'..') else raw)
                     parsed = email.message_from_bytes(b''.join(lines), policy=policy.default)
                     html = next((part.get_content() for part in parsed.walk() if part.get_content_type() == 'text/html'), '')
-                    (root / f'message-{time.time_ns()}.json').write_text(json.dumps({'recipients': recipients, 'tls': secured, 'authenticated': authenticated, 'html': html, 'subject': str(parsed['Subject'])}), encoding='utf-8')
+                    (root / f'message-{time.time_ns()}.json').write_text(json.dumps({
+                        'recipients': recipients,
+                        'tls': secured,
+                        'authenticated': authenticated,
+                        'html': html,
+                        'subject': str(parsed['Subject']),
+                    }), encoding='utf-8')
                     send('250 Accepted')
                 elif command == 'QUIT':
                     send('221 Bye')
