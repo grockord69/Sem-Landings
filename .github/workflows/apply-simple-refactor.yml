@@ -27,7 +27,10 @@ jobs:
           tar -xzf /tmp/innovapro-simple.tar.gz -C .
           mkdir -p clients/innovapro/assets/img
           cp -a /tmp/innovapro-images/. clients/innovapro/assets/img/
-          rm -rf .payload .github/workflows/apply-simple-refactor.yml
+          rm -rf .payload
+          # El token de Actions no puede modificar workflows. Los actualizamos
+          # después con la integración de GitHub y preservamos aquí los actuales.
+          git restore --source=HEAD -- .github/workflows
       - name: Commit refactor
         run: |
           git config user.name "github-actions[bot]"
