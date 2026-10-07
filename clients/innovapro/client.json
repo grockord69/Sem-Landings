@@ -1,0 +1,6 @@
+{
+  "client": "innovapro",
+  "runtime": "php",
+  "entrypoint": "index.php",
+  "min_php": "8.2"
+}

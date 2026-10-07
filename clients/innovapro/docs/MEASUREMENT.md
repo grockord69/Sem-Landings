@@ -1,15 +1,29 @@
-# Contrato de medición
+# Medición Google Ads
 
-IDs en config/config.example.php. La URL googletagmanager.com/gtag/js distribuye gtag.js; no instala un contenedor GTM.
+La landing carga Google Ads directamente mediante `gtag.js`, sin GA4 ni GTM.
 
-consent.js crea dataLayer/gtag, establece cuatro denied, restaura preferencia válida con update y carga Google tag incluso con denied. Aceptar concede solo ad_storage/ad_user_data. Analytics/personalización permanecen denied.
+## Consent Mode
 
-Formulario: POST validado → INSERT → lead_id → SMTP → JSON ok → EC opcional con SHA-256/permiso vigente → conversion con transaction_id y valor 30 EUR → éxito visual. SMTP fallido no cambia el evento. Se vuelve a comprobar consentimiento después de calcular hashes. user_data se limpia tras el evento y no se establece con contacto con denied.
+Antes de cargar Google se establece:
 
-Email: trim/lowercase y sin puntos antes de gmail.com/googlemail.com. Teléfono: quitar separadores, 00→+, nueve dígitos españoles→+34. Si no cumple E.164 se omite solo teléfono EC; no se bloquea el lead o la conversión estándar.
+```text
+ad_storage = denied
+ad_user_data = denied
+ad_personalization = denied
+analytics_storage = denied
+```
 
-IDs convertidos quedan en memoria/sessionStorage técnico sin PII. BD usa request_id UNIQUE y request_hash. Ese hash sirve a idempotencia, no se envía al navegador/Google. Teléfono y WhatsApp envían 10 EUR por conversión y comparten manejador; popup WhatsApp se abre vacío durante el gesto, luego navega por callback/timeout. Popup bloqueado navega en pestaña actual. Ventana corta evita acciones simultáneas; un clic posterior independiente puede ser otra conversión. Los clics no se guardan como leads.
+- Sin interacción o con rechazo: pings cookieless, sin Enhanced Conversions.
+- Con aceptación: `ad_storage` y `ad_user_data` pasan a `granted`; Analytics y personalización permanecen denegados.
 
-Metadatos de campaña provienen de la solicitud actual, sin cookie propia de atribución. URL/referrer guardan solo parámetros permitidos, sin fragmentos o parámetros arbitrarios. No introducir PII en URLs de campañas. Privacidad del formulario y decisión publicitaria son independientes. Sin IP en BD; configurar logs del proveedor por separado.
+## Conversiones
 
-Limitaciones: Google se simula en tests, sin acreditar recepción/atribución. Bloqueadores, fallos de red o JavaScript desactivado pueden impedir medición aunque el lead exista. No se reenvían conversiones desde el servidor ni se reconstruye EC tras denegación. Completar condiciones/configuración de cuenta según [Google](https://support.google.com/google-ads/answer/13258081?hl=es).
+| Acción | Destino | Valor |
+| --- | --- | ---: |
+| Formulario | `AW-763034950/bu_ECPvC9PkBEMb66-sC` | 30 EUR |
+| Clic teléfono | `AW-763034950/evT9CI2-wfwZEMb66-sC` | 10 EUR |
+| Clic WhatsApp | `AW-763034950/a58xCJOfqo8dEMb66-sC` | 10 EUR |
+
+El formulario dispara Ads únicamente después de que `form.php` confirme el INSERT. El ID interno se usa como `transaction_id`.
+
+Enhanced Conversions utiliza email y teléfono normalizados y hasheados únicamente cuando `ad_user_data=granted`.
