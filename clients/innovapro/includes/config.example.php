@@ -24,7 +24,7 @@ return [
     'smtp' => [
         'host' => '',
         'port' => 587,
-        'encryption' => 'tls', // tls (STARTTLS) o ssl (SMTPS)
+        'encryption' => 'tls', // tls (STARTTLS/587) o ssl (TLS implícito/465)
         'username' => '',
         'password' => '',
         'from_email' => '',
