@@ -4,6 +4,9 @@ DirectoryIndex index.php
 <IfModule mod_rewrite.c>
 RewriteEngine On
 
+# Deja libre el reto ACME de Plesk/Let's Encrypt para renovar HTTPS.
+RewriteRule ^\.well-known/acme-challenge/ - [L]
+
 # Nunca servir código, configuración, librerías, SQL, tests o documentación.
 RewriteRule ^(?:includes|lib|sql|tests|docs)(?:/|$) - [F,L,NC]
 RewriteRule (^|/)\. - [F,L]
