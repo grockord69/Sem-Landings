@@ -28,7 +28,6 @@ jobs:
             --exclude client.json \
             --exclude 'includes/config.php'
           cp "$OUT/includes/config.example.php" "$OUT/includes/config.php"
-          rm -f "$OUT/includes/config.example.php"
       - name: Upload production package
         uses: actions/upload-artifact@v4
         with:
