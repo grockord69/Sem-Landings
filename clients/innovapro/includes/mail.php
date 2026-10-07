@@ -142,7 +142,10 @@ function send_lead_email(array $lead): void
 
     $host = (string) cfg('smtp.host');
     $port = (int) cfg('smtp.port', 587);
-    $encryption = (string) cfg('smtp.encryption', 'tls');
+    $encryption = strtolower((string) cfg('smtp.encryption', 'tls'));
+    if (!in_array($encryption, ['tls', 'ssl'], true)) {
+        throw new RuntimeException('SMTP_ENCRYPTION_REQUIRED');
+    }
     $timeout = max(2, min(12, (int) cfg('smtp.timeout_seconds', 6)));
     $fromEmail = (string) cfg('smtp.from_email');
     $recipients = array_values(array_filter((array) cfg('smtp.recipients', []), static fn($email): bool => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL)));
