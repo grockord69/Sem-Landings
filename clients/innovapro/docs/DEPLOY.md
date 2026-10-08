@@ -1,78 +1,87 @@
-# Despliegue sencillo en Plesk
+# InnovaPro — instalación en Dinahosting
 
-## Requisitos
+## Antes de empezar
 
-- PHP 8.2 o superior con `pdo_mysql`, `openssl`, `iconv` y JSON.
-- MariaDB/MySQL.
-- Cuenta SMTP autenticada.
-- HTTPS para `demo.innovapro.es`.
+- La landing requiere PHP 8.2+ con pdo_mysql, openssl, iconv y JSON.
+- **demo.innovapro.es comparte hosting con la web principal**: en los planes de Dinahosting puede existir UNA sola versión PHP por hosting. Antes de modificarla, verifica la versión existente en **Hosting > Servidor > PHP** y la compatibilidad de innovapro.es. Si es anterior a 8.2, NO la cambies sin coordinarlo con el administrador; solicita alternativas al proveedor.
+- La instalación no usa Plesk, Composer, WordPress, vendor, cron ni carpetas exteriores obligatorias.
 
-## Pasos
+## 1. Subdominio y archivos
 
-1. Crea el subdominio en Plesk.
-2. Sube todo el contenido de esta carpeta a su document root (`httpdocs`, o el nombre que asigne Plesk).
-3. Copia `includes/config.example.php` como `includes/config.php`.
-4. Crea una BD y un usuario con permisos `SELECT`, `INSERT` y `UPDATE`.
-5. Importa `sql/schema.sql` desde phpMyAdmin/Plesk.
-6. Rellena `includes/config.php`. La política de conservación ya incluye criterios contrastados con la web corporativa; los nombres de proveedores solo se publican si se verifican.
-7. Protege `/admin/` con la función **Directorios protegidos con contraseña** de Plesk.
-8. Comprueba por SSH, si está disponible: `php includes/check.php`.
+1. En Panel > **Hosting > Dominios > Subdominios**, comprobar demo.innovapro.es, el directorio web asignado y Let's Encrypt.
+2. Subir **el contenido** del paquete, no una carpeta extra, al directorio del subdominio. Su nombre puede variar; no sobrescribir la raíz de innovapro.es.
+3. Mantener .htaccess y las carpetas includes, assets, admin y sql. Index.php debe quedar en la raíz del subdominio.
+4. Abrir https://demo.innovapro.es/ y comprobar SSL.
 
-No hay Composer, `vendor/`, framework, migraciones ni cron.
+Guía oficial: https://dinahosting.com/ayuda/hosting-subdominios/
 
-## Información legal y obligaciones operativas
+## 2. Base de datos
 
-- El aviso legal usa los datos de SHR LAXER BUSINESS S.L. publicados en su sitio corporativo.
-- La política de privacidad ya incorpora la base jurídica del consentimiento para consultas, los criterios corporativos de conservación y las categorías de proveedores. No se atribuye nombre o país al hosting o SMTP sin verificarlo.
-- **Antes de ponerla en producción:** comprobar el hosting y SMTP realmente contratados, su ubicación, acuerdos de encargado y eventuales transferencias fuera del EEE. Si se desea publicar sus nombres, completar `legal.hosting_provider` y `legal.email_provider`.
-- **Conservación:** el esquema actual no realiza borrados automáticos. La empresa deberá revisar periódicamente los leads y ejecutar las supresiones/bloqueos correspondientes (también en copias y notificaciones, según proceda). No se ha elegido un plazo ficticio de 12 o 24 meses.
-- **Google Ads:** el Consent Mode avanzado transmite señales sin cookies incluso al rechazar o ignorar el aviso. Este punto debe validarse jurídicamente según los tratamientos efectivos y la política del responsable; informar en la web no sustituye determinar su licitud.
-- En la tabla de cookies ya no aparece `sem_admin`, porque el panel está protegido por Plesk y no usa sesiones PHP. Confirmar con Tag Assistant y navegador las cookies que aparezcan en producción.
+1. En **Hosting > Bases de datos**, crear una BD MariaDB/MySQL nueva y usuario específico, sin usar la BD de WordPress del sitio principal.
+2. Dar al usuario del sitio permisos SELECT, INSERT y UPDATE; usar un usuario con CREATE para importar el esquema SQL la primera vez.
+3. Importar sql/schema.sql desde phpMyAdmin (Administrar BD).
+4. Completar db.name, db.user y db.password en includes/config.php. Para MariaDB local de Dinahosting, db.host = localhost; para bases externas, usar el hostname que indique el panel.
 
-## Seguridad práctica
+Guía oficial: https://dinahosting.com/ayuda/bases-datos/
 
-La aplicación vive dentro del document root para simplificar el despliegue. Se protege mediante:
+## 3. SMTP y contactos
 
-- `.htaccess` raíz que bloquea `includes/`, `lib/`, `sql/`, `tests/` y `docs/`;
-- `.htaccess` adicional dentro de los directorios sensibles;
-- PDO con consultas preparadas;
-- panel que exige autenticación previa del servidor;
-- sin contraseñas en el repositorio;
-- HTTPS y cabeceras de seguridad.
+Editar includes/config.php (incluido en el ZIP y listo para rellenar):
 
-En Plesk con Nginx como proxy y Apache como backend, verifica que `.htaccess` esté habilitado. Si el hosting usa Nginx sin Apache, replica esos bloqueos en la configuración del vhost.
+- smtp.host, smtp.port, smtp.encryption, smtp.username, smtp.password
+- smtp.from_email (remitente autorizado), smtp.recipients (todos los destinatarios)
+- contact.phone_e164, contact.whatsapp_e164, contact.email
+- app.url debe ser https://demo.innovapro.es
 
-## SMTP
+**No se sabe con certeza si el correo también está en Dinahosting.** Si lo está, en **Hosting > Correo > Sobre este correo** figuran servidor de salida y usuario. Utiliza el nombre EXACTO y **SMTPS puerto 465 con encryption = ssl**, según su guía. Otros SMTP pueden usar 587 con tls/STARTTLS. Nunca desactivar la verificación TLS ni usar SMTP sin cifrado.
 
-Recomendado:
+Guía oficial: https://dinahosting.com/ayuda/configuracion-ssl-cuenta-de-correo/
 
-- puerto 587 + `tls` para STARTTLS; o
-- puerto 465 + `ssl` para TLS implícito.
+## 4. Proteger el panel
 
-El lead se inserta primero. Después se intenta el correo y se actualiza `email_status` a `sent` o `error`. La aplicación rechaza SMTP sin cifrado: usa únicamente `tls` (STARTTLS/587) o `ssl` (TLS implícito/465).
+1. En **Hosting > Seguridad > Protección de carpetas**, proteger **solo /admin del subdominio** con usuario y contraseña fuertes.
+2. Probar desde una ventana privada /admin/ sin credenciales: el servidor debe pedirlas o denegar acceso.
+3. Probar con credenciales válidas: debe entrar al listado y permitir CSV.
+4. Si después de autenticarse aparece 403, comprobar con Dinahosting la entrega de REMOTE_USER al PHP. No anular esa segunda verificación. Como alternativa, admin/.htaccess.example permite configurar .htpasswd fuera de la carpeta pública.
 
-## Panel
+Guía oficial: https://dinahosting.com/ayuda/proteccion-carpetas/
 
-`/admin/` no tiene un login PHP propio. Plesk/Apache realiza la autenticación Basic Auth. El código comprueba `REMOTE_USER`; si la carpeta no está protegida, responde 403.
+## 5. Seguridad
 
-Funciones:
+Las carpetas internas incluyen .htaccess que debe impedir acceso web directo. En navegador, comprobar que **no se descargan**:
+- /includes/config.php
+- /sql/schema.sql
 
-- listado;
-- filtros;
-- búsqueda;
-- detalle;
-- CSV;
-- estado SMTP.
+Si alguna es accesible, detener la puesta en marcha y consultar soporte. Mantener HTTPS y las reglas .htaccess, incluyendo la excepción /.well-known/acme-challenge/ para Let's Encrypt.
 
-## Validación final
+## 6. Comprobaciones
 
-- formulario real guardado en BD;
-- email recibido;
-- lead visible en `/admin/`;
-- rechazo SMTP conserva el lead;
-- CMP: pendiente/rechazado/aceptado;
-- formulario 30 EUR;
-- llamada 10 EUR;
-- WhatsApp 10 EUR;
-- Enhanced Conversions solo con consentimiento;
-- Tag Assistant sin bloqueos CSP.
+Opcional por SSH desde la raíz del subdominio: php includes/check.php
+
+Probar un lead real controlado:
+- guardado de BD previo al intento de correo;
+- correo recibido por destinatarios;
+- detalle en /admin y exportación CSV;
+- error SMTP: lead conservado;
+- enlaces de llamada y WhatsApp correctos.
+
+Google Tag Assistant: comprobar las tres conversiones y valores, Consent Mode v2 avanzado (denied inicial, aceptado granted en ad_storage y ad_user_data) y Enhanced Conversions **solo** con consentimiento.
+
+- Formulario: 30 EUR, AW-763034950/bu_ECPvC9PkBEMb66-sC.
+- Clic teléfono: 10 EUR, AW-763034950/evT9CI2-wfwZEMb66-sC.
+- Clic WhatsApp: 10 EUR, AW-763034950/a58xCJOfqo8dEMb66-sC.
+
+## 7. Textos legales y retención
+
+Responsable: SHR LAXER BUSINESS S.L. Alojamiento confirmado: **Dinahosting, S.L.** (sociedad española). No deducimos por ello la ubicación física de los servidores. La identidad del SMTP y las garantías contractuales/transferencias se verifican con los servicios efectivamente contratados.
+
+La política de privacidad contiene criterios de conservación, pero **el panel no borra automáticamente leads**. La empresa necesita procedimientos efectivos de revisión, supresión y bloqueo cuando proceda. También debe validar la licitud de las señales cookieless del Consent Mode avanzado.
+
+## Documentación oficial
+
+- PHP único por hosting: https://dinahosting.com/ayuda/versiones-de-php-en-el-mismo-hosting/
+- Subdominios: https://dinahosting.com/ayuda/hosting-subdominios/
+- Base de datos: https://dinahosting.com/ayuda/bases-datos/
+- Protección de carpetas: https://dinahosting.com/ayuda/proteccion-carpetas/
+- SMTP con SSL: https://dinahosting.com/ayuda/configuracion-ssl-cuenta-de-correo/
+- Titular Dinahosting: https://dinahosting.com/legal/aviso-legal

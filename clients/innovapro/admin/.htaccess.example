@@ -1,5 +1,6 @@
-# Solo como alternativa si no utilizas el gestor de directorios protegidos de Plesk.
-# Sustituye la ruta por la ruta absoluta real y renombra este archivo a .htaccess.
+# Solo como alternativa a Hosting > Seguridad > Proteccion de carpetas de Dinahosting.
+# Sustituye la ruta por la absoluta real y renombra este archivo a .htaccess.
+# Verifica tambien que REMOTE_USER llega al PHP del administrador.
 AuthType Basic
 AuthName "InnovaPro Leads"
 AuthUserFile /ruta/privada/fuera-del-webroot/.htpasswd

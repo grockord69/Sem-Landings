@@ -9,11 +9,11 @@ return [
     'app' => [
         'url' => 'https://demo.innovapro.es',
         'timezone' => 'Europe/Madrid',
-        'privacy_version' => 'innova-2026-10-08-v2',
+        'privacy_version' => 'innova-2026-10-08-v3',
     ],
 
     'db' => [
-        'host' => '127.0.0.1',
+        'host' => 'localhost', // MariaDB integrada en Dinahosting. BD externa: usar host mostrado en el panel.
         'port' => 3306,
         'name' => '',
         'user' => '',
@@ -69,8 +69,9 @@ return [
         'registry' => 'Tomo 3814, libro 0, folio 45, sección 8, hoja A 142356, inscripción 1, de 18/11/2014.',
         'privacy_email' => 'info@innovapro.es',
         // Opcionales en la web: las categorías de proveedores ya constan en la política.
-        // Verificar contrato, ubicación y transferencias del hosting y SMTP reales antes de publicar.
-        'hosting_provider' => '',
+        // El alojamiento confirmado es Dinahosting; la ubicacion fisica del servidor debe verificarse.
+        'hosting_provider' => 'Dinahosting, S.L.',
+        // El correo saliente puede contratarse a otro proveedor.
         'email_provider' => '',
         // Criterios publicados por InnovaPro para consultas (no un plazo de meses inventado).
         'retention_policy' => 'Los datos de la solicitud se conservarán mientras sean necesarios para atenderla y mantener, en su caso, la relación solicitada; posteriormente, durante los plazos de prescripción de las responsabilidades legales que puedan derivarse. Cuando dejen de ser necesarios se suprimirán o, si legalmente corresponde, se bloquearán. Si se formaliza una relación contractual, se aplicarán además los plazos legales correspondientes.',

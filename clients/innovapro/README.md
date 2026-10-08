@@ -1,35 +1,30 @@
 # InnovaPro · landing SEM simplificada
 
-Landing PHP sin framework ni Composer para `demo.innovapro.es`.
+Landing PHP para https://demo.innovapro.es/, alojada en Dinahosting, con instalación directa en la carpeta web del subdominio. Sin Composer, WordPress ni cron.
 
 ## Estructura
 
-```text
-index.php / form.php             Landing y envío
-assets/                          CSS, JS e imágenes
-includes/                        Configuración y funciones PHP
-admin/                           Panel solo lectura protegido por Plesk/Apache
-sql/schema.sql                   Tabla de leads
-aviso-legal.php
-privacidad.php
-cookies.php
-```
+- index.php, form.php, páginas legales.
+- assets/: CSS, JS e imágenes.
+- includes/: configuración y PHP.
+- admin/: listado, filtros, detalle y CSV, protegido por autenticación del servidor.
+- sql/schema.sql: base de datos.
 
-## Instalación
+## Despliegue
 
-1. Subir el contenido de `clients/innovapro/` al document root del subdominio.
-2. Copiar `includes/config.example.php` como `includes/config.php`.
-3. Crear BD e importar `sql/schema.sql`.
-4. Completar BD, SMTP, destinatarios y legales en `config.php`.
-5. Proteger `/admin/` desde Plesk.
-6. Ejecutar `php includes/check.php` y la checklist de `docs/DEPLOY.md`.
+Guías: [README-UPLOAD.txt](README-UPLOAD.txt) y [docs/DEPLOY.md](docs/DEPLOY.md).
 
-No necesita Composer ni cron. El formulario guarda en BD antes de SMTP. Un fallo de correo no elimina el lead.
+**Importante:** en Dinahosting la versión de PHP puede ser común para todo el hosting. Antes de tocar PHP, confirmar que la versión actual sea >=8.2; no cambiarla sin comprobar la web principal.
+
+El directorio raíz lo determina la configuración del subdominio y puede no llamarse httpdocs. Nunca sobrescribir la web innovapro.es.
+
+1. Subir archivos a la carpeta del subdominio.
+2. Crear BD separada, importar SQL y editar includes/config.php.
+3. Proteger /admin desde Dinahosting > Seguridad > Protección de carpetas.
+4. Probar seguridad de includes, SMTP y conversiones Ads.
+
+Hosting identificado: Dinahosting, S.L.; servidor SMTP todavía sin confirmar.
 
 ## Medición
 
-- Formulario: `AW-763034950/bu_ECPvC9PkBEMb66-sC` · 30 EUR.
-- Teléfono: `AW-763034950/evT9CI2-wfwZEMb66-sC` · 10 EUR.
-- WhatsApp: `AW-763034950/a58xCJOfqo8dEMb66-sC` · 10 EUR.
-- Consent Mode v2 avanzado.
-- Enhanced Conversions únicamente para formularios confirmados y con `ad_user_data=granted`.
+Formulario 30 EUR; llamada 10 EUR; WhatsApp 10 EUR. Consent Mode v2 avanzado y conversiones mejoradas con consentimiento. Se confirma el INSERT del lead antes del evento de conversión.
