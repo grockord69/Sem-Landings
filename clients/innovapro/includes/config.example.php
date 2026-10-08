@@ -9,7 +9,7 @@ return [
     'app' => [
         'url' => 'https://demo.innovapro.es',
         'timezone' => 'Europe/Madrid',
-        'privacy_version' => 'innova-2026-10-07-v1',
+        'privacy_version' => 'innova-2026-10-08-v2',
     ],
 
     'db' => [
@@ -58,7 +58,7 @@ return [
     ],
 
     'consent' => [
-        'version' => 'innova-cmp-simple-1',
+        'version' => 'innova-cmp-simple-2',
         'cookie_days' => 180,
     ],
 
@@ -68,9 +68,12 @@ return [
         'address' => 'Calle Número 16, naves 39 / 41. Pol. Industrial Base 2000. 30564 Lorquí, Murcia.',
         'registry' => 'Tomo 3814, libro 0, folio 45, sección 8, hoja A 142356, inscripción 1, de 18/11/2014.',
         'privacy_email' => 'info@innovapro.es',
+        // Opcionales en la web: las categorías de proveedores ya constan en la política.
+        // Verificar contrato, ubicación y transferencias del hosting y SMTP reales antes de publicar.
         'hosting_provider' => '',
         'email_provider' => '',
-        'retention_policy' => '',
+        // Criterios publicados por InnovaPro para consultas (no un plazo de meses inventado).
+        'retention_policy' => 'Los datos de la solicitud se conservarán mientras sean necesarios para atenderla y mantener, en su caso, la relación solicitada; posteriormente, durante los plazos de prescripción de las responsabilidades legales que puedan derivarse. Cuando dejen de ser necesarios se suprimirán o, si legalmente corresponde, se bloquearán. Si se formaliza una relación contractual, se aplicarán además los plazos legales correspondientes.',
     ],
 
     'content' => [
