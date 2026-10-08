@@ -9,7 +9,8 @@ No usa Composer, no necesita cron y no requiere colocar carpetas fuera de httpdo
 3. Completa en includes/config.php:
    - base de datos;
    - SMTP y destinatarios;
-   - proveedor de hosting/correo y conservación;
+   - confirmar internamente los proveedores reales de hosting y correo, así como su ubicación;
+   - la conservación ya figura como criterio en la política corporativa; aplicar revisiones y supresión de datos cuando correspondan;
    - confirma teléfono y WhatsApp.
 4. Crea una base de datos MariaDB/MySQL e importa sql/schema.sql.
 5. En Plesk, protege el directorio /admin/ con usuario y contraseña.
@@ -23,3 +24,6 @@ IMPORTANTE
 - El panel devuelve 403 si Plesk/Apache no informa de un usuario autenticado.
 - Los leads se guardan antes de intentar enviar el email.
 - Valores Google Ads: formulario 30 EUR, llamada 10 EUR, WhatsApp 10 EUR.
+- La política informa de categorías de proveedores, sin inventar empresas o países.
+- Verificar contratos con encargados del tratamiento y transferencias efectivas antes de publicar.
+- El panel no borra leads automáticamente: programar revisión manual de conservación.

@@ -43,5 +43,7 @@ check(csv_cell('=SUM(A1:A2)') === "'=SUM(A1:A2)", 'CSV neutraliza fórmulas');
 check(csv_cell('normal') === 'normal', 'CSV conserva texto normal');
 
 check(smtp_is_configured() === false, 'ejemplo no finge SMTP configurado');
+check((string)cfg('legal.retention_policy') !== '', 'conservación basada en criterios existentes de InnovaPro');
+check(cfg('legal.hosting_provider') === '' && cfg('legal.email_provider') === '', 'no inventa proveedores de la instalación');
 
 echo "TOTAL $checks comprobaciones PHP\n";

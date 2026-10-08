@@ -14,11 +14,20 @@
 3. Copia `includes/config.example.php` como `includes/config.php`.
 4. Crea una BD y un usuario con permisos `SELECT`, `INSERT` y `UPDATE`.
 5. Importa `sql/schema.sql` desde phpMyAdmin/Plesk.
-6. Rellena `includes/config.php`.
+6. Rellena `includes/config.php`. La política de conservación ya incluye criterios contrastados con la web corporativa; los nombres de proveedores solo se publican si se verifican.
 7. Protege `/admin/` con la función **Directorios protegidos con contraseña** de Plesk.
 8. Comprueba por SSH, si está disponible: `php includes/check.php`.
 
 No hay Composer, `vendor/`, framework, migraciones ni cron.
+
+## Información legal y obligaciones operativas
+
+- El aviso legal usa los datos de SHR LAXER BUSINESS S.L. publicados en su sitio corporativo.
+- La política de privacidad ya incorpora la base jurídica del consentimiento para consultas, los criterios corporativos de conservación y las categorías de proveedores. No se atribuye nombre o país al hosting o SMTP sin verificarlo.
+- **Antes de ponerla en producción:** comprobar el hosting y SMTP realmente contratados, su ubicación, acuerdos de encargado y eventuales transferencias fuera del EEE. Si se desea publicar sus nombres, completar `legal.hosting_provider` y `legal.email_provider`.
+- **Conservación:** el esquema actual no realiza borrados automáticos. La empresa deberá revisar periódicamente los leads y ejecutar las supresiones/bloqueos correspondientes (también en copias y notificaciones, según proceda). No se ha elegido un plazo ficticio de 12 o 24 meses.
+- **Google Ads:** el Consent Mode avanzado transmite señales sin cookies incluso al rechazar o ignorar el aviso. Este punto debe validarse jurídicamente según los tratamientos efectivos y la política del responsable; informar en la web no sustituye determinar su licitud.
+- En la tabla de cookies ya no aparece `sem_admin`, porque el panel está protegido por Plesk y no usa sesiones PHP. Confirmar con Tag Assistant y navegador las cookies que aparezcan en producción.
 
 ## Seguridad práctica
 
