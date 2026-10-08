@@ -4,6 +4,9 @@ DirectoryIndex index.php
 <IfModule mod_rewrite.c>
 RewriteEngine On
 
+# Ruta antigua bloqueada aunque queden archivos tras actualizar producción.
+RewriteRule ^admin(?:/|$) - [F,L,NC]
+
 # Deja libre el reto ACME de Plesk/Let's Encrypt para renovar HTTPS.
 RewriteRule ^\.well-known/acme-challenge/ - [L]
 

@@ -60,7 +60,7 @@
       // Solo BD confirmada; el estado SMTP no participa en la conversión.
       try { await window.InnovaAds.convert('form', result.lead_id, {email: data.email, phone: data.phone}); }
       catch (_) { /* Una incidencia de medición nunca invalida un lead ya guardado. */ }
-      message('Solicitud recibida. Nuestro equipo contactará contigo. Referencia: ' + result.lead_id + '.', 'success');
+      message('Solicitud recibida. Nuestro equipo contactará contigo.', 'success');
       button.textContent = 'Solicitud recibida';
       form.reset(); fieldErrors();
       try { sessionStorage.removeItem(requestKey); } catch (_) {}

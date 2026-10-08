@@ -22,6 +22,11 @@ foreach (['db.name', 'db.user', 'smtp.host', 'smtp.username', 'smtp.password', '
     }
 }
 
+if (!is_readable(__DIR__ . '/.htpasswd')) {
+    echo "FALTA includes/.htpasswd (panel privado)\n";
+    $ok = false;
+}
+
 try {
     db()->query('SELECT id FROM leads LIMIT 1');
     echo "BD/schema: OK\n";

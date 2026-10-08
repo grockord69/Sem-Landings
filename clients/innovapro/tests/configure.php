@@ -31,3 +31,5 @@ $config['legal']['email_provider'] = 'CI SMTP';
 $config['legal']['retention_policy'] = 'Datos sintéticos eliminados al finalizar la ejecución.';
 
 file_put_contents($argv[1], "<?php\ndeclare(strict_types=1);\nreturn " . var_export($config, true) . ";\n");
+// Credenciales sintéticas, generadas solo en la CI.
+file_put_contents(__DIR__ . '/../includes/.htpasswd', 'leadsmanager:' . password_hash('qa-admin-test-only', PASSWORD_BCRYPT, ['cost' => 10]) . "\n");

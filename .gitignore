@@ -1,6 +1,8 @@
 .codex-remote-attachments/
 .local/
 **/includes/config.php
+**/includes/.htpasswd
+**/.htpasswd
 **/.env
 **/.env.*
 **/*.log

@@ -11,7 +11,7 @@ secret_patterns = [
 
 for name in filter(None, files):
     path = PurePosixPath(name)
-    if (path.name == 'config.php' and 'includes' in path.parts) or path.name.startswith('.env'):
+    if (path.name in {'config.php', '.htpasswd'} and ('includes' in path.parts or path.name == '.htpasswd')) or path.name.startswith('.env'):
         problems.append(name + ': configuración privada')
     if path.suffix in {'.log', '.pem', '.key', '.p12', '.pfx', '.pyc'}:
         problems.append(name + ': fichero privado o generado')

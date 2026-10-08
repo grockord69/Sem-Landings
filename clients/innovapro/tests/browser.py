@@ -102,6 +102,7 @@ with sync_playwright() as pl:
         events = conversions(page)
         check(len(events) == 1 and events[0]['transaction_id'] == '42', 'una conversión con lead_id: ' + consent)
         check(events[0]['value'] == 30 and events[0]['currency'] == 'EUR', 'formulario 30 EUR: ' + consent)
+        check('Referencia:' not in page.locator('#form-status').inner_text(), 'no muestra referencia de lead')
 
         user_data = page.evaluate("__qa.calls.filter(c=>c[0]==='set'&&c[1]==='user_data'&&Object.keys(c[2]).length)")
         if consent == 'accepted':
