@@ -1,11 +1,19 @@
-PROTECCIÓN DEL PANEL
+PANEL PRIVADO INNOVAPRO - DINAHOSTING
 
-Protege el directorio /admin/ desde Plesk:
+1. Ir a Panel de Control > Hosting > Seguridad > Proteccion de carpetas.
+2. Proteger EXCLUSIVAMENTE /admin dentro de demo.innovapro.es.
+3. Crear usuario y contrasena fuerte.
 
-1. Websites & Domains / Sitios web y dominios.
-2. Password-Protected Directories / Directorios protegidos con contraseña.
-3. Añade /admin y crea un usuario con contraseña fuerte.
+TEST:
+- Sin credenciales, /admin/ debe solicitar autenticacion o denegar acceso.
+- Con credenciales, debe aparecer el listado de leads.
+- /admin/export.php NO debe permitir descargar leads sin autenticacion.
 
-El PHP del panel no implementa un segundo login. Como medida de seguridad, devuelve 403 si el servidor no le informa de un usuario autenticado mediante REMOTE_USER.
+El PHP del panel requiere REMOTE_USER o REDIRECT_REMOTE_USER. Si
+aparece HTTP 403 despues del login, pide al hosting que propague la
+identidad de usuario autenticado. No se debe eliminar ese control.
 
-No subas archivos .htpasswd al repositorio.
+Si no hay opcion en el panel, usar admin/.htaccess.example con ruta
+absoluta a un .htpasswd PRIVADO y fuera de la raiz web.
+
+Nunca publicar usuarios, contrasenas ni archivos .htpasswd en Git.

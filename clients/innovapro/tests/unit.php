@@ -44,6 +44,8 @@ check(csv_cell('normal') === 'normal', 'CSV conserva texto normal');
 
 check(smtp_is_configured() === false, 'ejemplo no finge SMTP configurado');
 check((string)cfg('legal.retention_policy') !== '', 'conservación basada en criterios existentes de InnovaPro');
-check(cfg('legal.hosting_provider') === '' && cfg('legal.email_provider') === '', 'no inventa proveedores de la instalación');
+check(cfg('legal.hosting_provider') === 'Dinahosting, S.L.', 'proveedor hosting confirmado');
+check(cfg('legal.email_provider') === '', 'no inventa proveedor SMTP');
+check(cfg('db.host') === 'localhost', 'host MariaDB local Dinahosting');
 
 echo "TOTAL $checks comprobaciones PHP\n";
