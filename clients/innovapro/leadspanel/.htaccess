@@ -1,3 +1,6 @@
 Options -Indexes
-# HTTP Basic con includes/.htpasswd validado por PHP.
-# Apache AuthUserFile exige una ruta absoluta desconocida antes del despliegue.
+# HTTP Basic usa includes/.htpasswd y se valida en PHP.
+# No depende de configurar rutas absolutas con AuthUserFile.
+<IfModule mod_setenvif.c>
+    SetEnvIfNoCase Authorization "(.+)" HTTP_AUTHORIZATION=$1
+</IfModule>

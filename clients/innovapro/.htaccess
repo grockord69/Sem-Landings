@@ -1,8 +1,16 @@
 Options -Indexes
 DirectoryIndex index.php
 
+# PHP-FPM/FastCGI: preservar Authorization para el panel de leads.
+<IfModule mod_setenvif.c>
+    SetEnvIfNoCase Authorization "(.+)" HTTP_AUTHORIZATION=$1
+</IfModule>
+
 <IfModule mod_rewrite.c>
 RewriteEngine On
+
+# Algunos CGI reciben la cabecera como REDIRECT_HTTP_AUTHORIZATION.
+RewriteRule ^leadspanel(?:/|$) - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
 # Ruta antigua bloqueada aunque queden archivos tras actualizar producción.
 RewriteRule ^admin(?:/|$) - [F,L,NC]

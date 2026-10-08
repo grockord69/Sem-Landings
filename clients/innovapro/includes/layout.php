@@ -24,7 +24,7 @@ function page_head(string $title, bool $tracking = false): void
   <script id="innova-config" type="application/json" nonce="<?= esc($nonce) ?>"><?= json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE) ?></script>
   <script src="/assets/js/consent.js" defer></script>
   <script src="/assets/js/tracking.js" defer></script>
-  <script src="/assets/js/app.js" defer></script>
+  <script src="/assets/js/app.js?v=<?= (int) (@filemtime(__DIR__ . '/../assets/js/app.js') ?: 1) ?>" defer></script>
 </head>
 <body>
 <?php
