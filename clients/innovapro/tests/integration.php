@@ -91,7 +91,17 @@ check(count($messages) >= 2, 'fixture recibió emails reales');
 $message = json_decode(file_get_contents(end($messages)), true, 16, JSON_THROW_ON_ERROR);
 check($message['recipients'] === ['one@example.test', 'two@example.test'], 'múltiples destinatarios SMTP');
 check($message['authenticated'] && $message['tls'], 'SMTP autenticado con STARTTLS');
-check(str_contains($message['html'], '&lt;b&gt;') && str_contains($message['html'], 'test-gclid'), 'plantilla escapa HTML e incluye atribución');
+check($message['subject'] === 'Nueva contacto desde GAds', 'asunto del correo exacto');
+$visibleHtml = strip_tags(str_replace('</div>', "\n", $message['html']));
+$htmlLines = array_values(array_filter(array_map('trim', explode("\n", $visibleHtml)), 'strlen'));
+$plainLines = array_values(array_filter(array_map('trim', explode("\n", (string) ($message['plain'] ?? ''))), 'strlen'));
+check(count($plainLines) === 4 && count($htmlLines) === 4, 'HTML y texto solo contienen cuatro líneas');
+foreach (['Fecha y hora:', 'Nombre:', 'Teléfono:', 'Email:'] as $i => $field) {
+    check(str_starts_with($plainLines[$i], $field) && str_starts_with($htmlLines[$i], $field), 'campo visible ' . $field);
+}
+check(!str_contains($message['html'], 'test-gclid') &&
+      !str_contains($message['html'], 'ID interno') &&
+      !str_contains($message['html'], '<b>'), 'sin campañas, ID ni HTML inyectado');
 
 $beforeFailure = count(glob($fixture . '/message-*.json') ?: []);
 $pdo->exec('RENAME TABLE leads TO leads_unavailable');

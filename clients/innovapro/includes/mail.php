@@ -81,30 +81,17 @@ function smtp_message(array $lead, array $recipients): string
     $fromName = mime_header((string) cfg('smtp.from_name', 'InnovaPro'));
     $replyEmail = mail_header_value($lead['email']);
     $replyName = mime_header($lead['nombre']);
-    $subject = mime_header('Nueva solicitud · InnovaPro · Lead #' . $lead['id']);
+    $subject = 'Nueva contacto desde GAds';
     $domain = str_contains($fromEmail, '@') ? substr(strrchr($fromEmail, '@'), 1) : 'localhost';
     $boundary = '=_innovapro_' . bin2hex(random_bytes(12));
 
-    $rows = '';
-    foreach (['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'wbraid', 'gbraid', 'landing_url', 'referrer'] as $key) {
-        if (!empty($lead[$key])) {
-            $rows .= '<tr><th style="text-align:left;padding:6px 12px 6px 0">' . esc($key) . '</th><td>' . esc($lead[$key]) . '</td></tr>';
-        }
-    }
-
-    $html = '<h2>Nueva solicitud de depilación profesional · InnovaPro</h2>'
-        . '<p><strong>ID interno:</strong> ' . esc($lead['id']) . '<br>'
-        . '<strong>Fecha y hora:</strong> ' . esc(local_date($lead['created_at'])) . '<br>'
-        . '<strong>Nombre:</strong> ' . esc($lead['nombre']) . '<br>'
-        . '<strong>Teléfono:</strong> ' . esc($lead['telefono']) . '<br>'
-        . '<strong>Email:</strong> ' . esc($lead['email']) . '</p>'
-        . '<p>Interés: información o demostración; compra, alquiler y financiación.</p>'
-        . ($rows ? '<table>' . $rows . '</table>' : '')
-        . '<p>La solicitud está guardada en el panel privado.</p>';
-
-    $text = "Nueva solicitud InnovaPro\r\n"
-        . 'ID: ' . $lead['id'] . "\r\n"
-        . 'Fecha: ' . local_date($lead['created_at']) . "\r\n"
+    // El cuerpo, en ambas versiones, contiene exactamente los cuatro campos pedidos.
+    $when = local_date($lead['created_at']);
+    $html = '<div>Fecha y hora: ' . esc($when) . '</div>'
+        . '<div>Nombre: ' . esc($lead['nombre']) . '</div>'
+        . '<div>Teléfono: ' . esc($lead['telefono']) . '</div>'
+        . '<div>Email: ' . esc($lead['email']) . '</div>';
+    $text = 'Fecha y hora: ' . $when . "\r\n"
         . 'Nombre: ' . $lead['nombre'] . "\r\n"
         . 'Teléfono: ' . $lead['telefono'] . "\r\n"
         . 'Email: ' . $lead['email'];

@@ -39,6 +39,7 @@ check(status == 200 and 'noindex,follow' in html and 'noindex, follow' in header
 check('Content-Security-Policy' in headers and "object-src 'none'" in headers['Content-Security-Policy'], 'CSP emitida')
 check('localidad' not in html.lower() and 'name="website"' not in html, 'sin localidad ni honeypot')
 check('Compra · Alquiler · Financiación' in html, 'modalidades comerciales visibles')
+check(re.search(r'/assets/js/app\.js\?v=\d+', html) is not None, 'form JS con version distinta a ruta cacheada')
 
 for path in ['/privacidad.php', '/cookies.php', '/aviso-legal.php']:
     check(request(path)[0] == 200, 'legal ' + path)

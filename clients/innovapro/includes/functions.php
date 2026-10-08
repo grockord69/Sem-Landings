@@ -238,24 +238,47 @@ function htpasswd_accepts(string $user, string $password, string $file): bool
     return false;
 }
 
+/**
+ * Compatible con Apache mod_php, PHP-FPM, FastCGI y Authorization reenviada.
+ * La contraseña SIEMPRE se contrasta con bcrypt en el .htpasswd.
+ */
 function basic_auth_credentials(): array
 {
     $user = $_SERVER['PHP_AUTH_USER'] ?? null;
     $password = $_SERVER['PHP_AUTH_PW'] ?? null;
-    if (is_string($user) && is_string($password)) {
+    if (is_string($user) && $user !== '' && is_string($password) && $password !== '') {
         return [$user, $password];
     }
-    $header = (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '');
-    if ($header === '' && function_exists('getallheaders')) {
+
+    $headers = [];
+    foreach ([
+        'HTTP_AUTHORIZATION',
+        'REDIRECT_HTTP_AUTHORIZATION',
+        'REDIRECT_REDIRECT_HTTP_AUTHORIZATION',
+        'AUTHORIZATION',
+    ] as $key) {
+        if (is_string($_SERVER[$key] ?? null)) {
+            $headers[] = $_SERVER[$key];
+        }
+        $value = getenv($key);
+        if (is_string($value) && $value !== '') {
+            $headers[] = $value;
+        }
+    }
+
+    if (function_exists('getallheaders')) {
         foreach (getallheaders() as $key => $value) {
-            if (strcasecmp($key, 'Authorization') === 0 && is_string($value)) {
-                $header = $value;
-                break;
+            if (strcasecmp((string) $key, 'Authorization') === 0 && is_string($value)) {
+                $headers[] = $value;
             }
         }
     }
-    if (preg_match('/^Basic\\s+([A-Za-z0-9+\\/]+={0,2})$/iD', $header, $m)) {
-        $decoded = base64_decode($m[1], true);
+
+    foreach ($headers as $header) {
+        if (!preg_match('~^Basic\s+([A-Za-z0-9+/]+={0,2})$~iD', trim($header), $match)) {
+            continue;
+        }
+        $decoded = base64_decode($match[1], true);
         if (is_string($decoded) && strlen($decoded) <= 512 && str_contains($decoded, ':')) {
             return explode(':', $decoded, 2);
         }
@@ -276,7 +299,7 @@ function require_server_auth(): string
     if (htpasswd_accepts($user, $password, $file)) {
         return $user;
     }
-    header('WWW-Authenticate: Basic realm="InnovaPro leads", charset="UTF-8"');
+    header('WWW-Authenticate: Basic realm="InnovaPro leads v2", charset="UTF-8"');
     header('Cache-Control: private, no-store');
     http_response_code(401);
     header('Content-Type: text/plain; charset=utf-8');

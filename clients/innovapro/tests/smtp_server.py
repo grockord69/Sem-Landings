@@ -74,11 +74,13 @@ class Handler(socketserver.BaseRequestHandler):
                         lines.append(raw[1:] if raw.startswith(b'..') else raw)
                     parsed = email.message_from_bytes(b''.join(lines), policy=policy.default)
                     html = next((part.get_content() for part in parsed.walk() if part.get_content_type() == 'text/html'), '')
+                    plain = next((part.get_content() for part in parsed.walk() if part.get_content_type() == 'text/plain'), '')
                     (root / f'message-{time.time_ns()}.json').write_text(json.dumps({
                         'recipients': recipients,
                         'tls': secured,
                         'authenticated': authenticated,
                         'html': html,
+                        'plain': plain,
                         'subject': str(parsed['Subject']),
                     }), encoding='utf-8')
                     send('250 Accepted')

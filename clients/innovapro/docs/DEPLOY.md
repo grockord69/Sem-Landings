@@ -95,3 +95,12 @@ La política de privacidad contiene criterios de conservación, pero **el panel 
 ### Actualización sobre producción
 
 Si la landing ya funciona, instalar solo el parche de esta versión; **no sobrescribir includes/config.php**, que contiene las credenciales operativas, y **no volver a importar sql/schema.sql**. Borrar /admin/ y comprobar después /leadspanel/. Los cambios no afectan a BD, SMTP ni conversiones.
+
+## Parche de corrección de octubre de 2026
+
+- El JavaScript del formulario ahora se referencia como `/assets/js/app.js?v=...`, con un valor calculado desde la modificación del archivo. Esto evita que un navegador conserve durante siete días la versión antigua que mostraba la referencia del lead.
+- El usuario ve únicamente **«Solicitud recibida. Nuestro equipo contactará contigo.»**. El `lead_id` permanece internamente en BD y Ads.
+- Para HTTP Basic, Apache retransmite `Authorization` a PHP-FPM/FastCGI mediante `.htaccess`. El código comprueba `PHP_AUTH_USER`, `HTTP_AUTHORIZATION`, `REDIRECT_HTTP_AUTHORIZATION` y alternativas; siempre verifica el hash bcrypt de `includes/.htpasswd`.
+- El fichero `includes/.htpasswd` debe reemplazarse junto con la contraseña facilitada por separado. Si el navegador recuerda un acceso anterior, usa una ventana privada.
+- El correo contiene exclusivamente fecha y hora, nombre, teléfono y email, con asunto literal **«Nueva contacto desde GAds»**.
+- Se actualizan los tests de navegador, validación CGI, SMTP y HTML/texto del correo.

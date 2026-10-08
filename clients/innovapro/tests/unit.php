@@ -54,4 +54,20 @@ check(htpasswd_accepts('leadsmanager', 'qa-password', $file), 'bcrypt valida con
 check(!htpasswd_accepts('leadsmanager', 'incorrecta', $file), 'bcrypt rechaza clave errónea');
 check(!htpasswd_accepts('intruso', 'qa-password', $file), 'bcrypt rechaza usuario erróneo');
 unlink($file);
+
+$originalAuth = [];
+foreach (['PHP_AUTH_USER', 'PHP_AUTH_PW', 'HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION'] as $key) {
+    $originalAuth[$key] = $_SERVER[$key] ?? null;
+    unset($_SERVER[$key]);
+}
+$_SERVER['REDIRECT_HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('leadsmanager:qa-password');
+check(basic_auth_credentials() === ['leadsmanager', 'qa-password'], 'CGI reenvía Authorization a PHP');
+unset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
+$_SERVER['PHP_AUTH_USER'] = 'leadsmanager';
+$_SERVER['PHP_AUTH_PW'] = 'qa-password';
+check(basic_auth_credentials() === ['leadsmanager', 'qa-password'], 'PHP_AUTH_USER y PHP_AUTH_PW reconocidos');
+foreach ($originalAuth as $key => $value) {
+    if ($value === null) { unset($_SERVER[$key]); }
+    else { $_SERVER[$key] = $value; }
+}
 echo "TOTAL $checks comprobaciones PHP\n";
