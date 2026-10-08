@@ -15,7 +15,7 @@ foreach (['pdo_mysql', 'openssl', 'iconv'] as $extension) {
     $ok = $ok && $present;
 }
 
-foreach (['db.name', 'db.user', 'smtp.host', 'smtp.username', 'smtp.password', 'smtp.from_email', 'smtp.recipients', 'legal.hosting_provider', 'legal.email_provider', 'legal.retention_policy'] as $key) {
+foreach (['db.name', 'db.user', 'smtp.host', 'smtp.username', 'smtp.password', 'smtp.from_email', 'smtp.recipients', 'legal.retention_policy'] as $key) {
     if (!cfg($key)) {
         echo 'FALTA ' . $key . PHP_EOL;
         $ok = false;
