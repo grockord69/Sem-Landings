@@ -7,7 +7,7 @@ Landing PHP para https://demo.innovapro.es/, alojada en Dinahosting, con instala
 - index.php, form.php, páginas legales.
 - assets/: CSS, JS e imágenes.
 - includes/: configuración y PHP.
-- leadspanel/: listado, filtros, detalle y CSV, protegido por autenticación HTTP Basic y el fichero includes/.htpasswd (bcrypt).
+- leadspanel/: listado, filtros, detalle y CSV, protegido por sesión privada PHP y contraseña bcrypt de includes/.htpasswd.
 - sql/schema.sql: base de datos.
 
 ## Despliegue
