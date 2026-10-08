@@ -9,6 +9,7 @@ page_head('Política de cookies | InnovaPro'); site_header(false);
 <h2>Cookies y almacenamiento</h2><div class="legal-scroll"><table><thead><tr><th>Elemento</th><th>Finalidad</th><th>Duración</th></tr></thead><tbody>
 <tr><td>innova_consent</td><td>Cookie propia de InnovaPro, necesaria para recordar la aceptación o el rechazo de la medición publicitaria.</td><td><?= (int)cfg('consent.cookie_days') ?> días</td></tr>
 <tr><td>_gcl_* de Google Ads (Google Ireland Limited)</td><td>Cookies publicitarias de atribución y medición de conversiones, que pueden instalarse únicamente si aceptas. No habilitamos personalización de anuncios.</td><td>Hasta 90 días, según la información publicada por Google.</td></tr>
+<tr><td>innovapro_leads_sid</td><td>Cookie técnica de sesión del panel privado, necesaria para mantener el acceso autorizado. No se instala a visitantes de la landing.</td><td>Sesión de navegador; el acceso caduca tras 30 minutos de inactividad.</td></tr>
 <tr><td>sem:innova:pending-request y sem:innova:converted-leads</td><td>Almacenamiento técnico de sesión para evitar solicitudes y conversiones duplicadas. Solo identificadores, sin datos de contacto.</td><td>Sesión de la pestaña.</td></tr>
 
 </tbody></table></div>

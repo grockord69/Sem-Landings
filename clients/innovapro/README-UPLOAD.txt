@@ -47,3 +47,11 @@ CORRECCION OPERATIVA DE OCTUBRE 2026:
 - Correo simplificado: asunto Nueva contacto desde GAds. Cuerpo solo cuatro campos.
 - La contraseña se facilita por separado del parche y no se guarda en Git.
 - NO sobrescribir includes/config.php ni reimportar sql/schema.sql en produccion.
+
+HOTFIX PRODUCCIÓN: ENVÍO DE FORMULARIOS Y ACCESO AL PANEL
+- El formulario utiliza el host real demo.innovapro.es para validar Origin. La aplicación ya no compara app.url como una cadena exacta; orígenes extranjeros siguen bloqueados.
+- /leadspanel/ muestra un formulario privado de acceso con sesiones PHP y verifica la contraseña bcrypt de includes/.htpasswd. No depende del envío de cabeceras Basic por Apache/PHP-FPM.
+- El navegador almacena solo una cookie técnica HttpOnly, Secure en producción y SameSite Strict, limitada a /leadspanel/; caduca tras 30 minutos de inactividad.
+- El .htpasswd con credenciales productivas se entrega ÚNICAMENTE en el ZIP privado. Nunca subir la clave legible ni añadirla al repositorio.
+- El .htaccess raíz continúa bloqueando /admin/ y los directorios sensibles.
+- NO sobrescribir includes/config.php ni importar sql/schema.sql en una instalación existente.

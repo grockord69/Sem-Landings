@@ -64,12 +64,18 @@ function admin_head(string $title): void
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title><?= esc($title) ?> · InnovaPro</title>
-  <link rel="stylesheet" href="/assets/css/admin.css">
+  <link rel="stylesheet" href="/assets/css/admin.css?v=<?= (int) (@filemtime(__DIR__ . '/../assets/css/admin.css') ?: 1) ?>">
 </head>
 <body>
 <header>
   <a href="/leadspanel/">INNOVAPRO <span>Panel privado</span></a>
-  <span><?= esc($currentAdmin) ?></span>
+  <div class="panel-user">
+    <span><?= esc($currentAdmin) ?></span>
+    <form action="/leadspanel/" method="post">
+      <input type="hidden" name="csrf" value="<?= esc(panel_csrf_token()) ?>">
+      <button type="submit" name="panel_logout" value="1">Salir</button>
+    </form>
+  </div>
 </header>
 <main>
 <?php
@@ -79,7 +85,7 @@ function admin_foot(): void
 {
     ?>
 </main>
-<footer>Horas <?= esc(cfg('app.timezone')) ?> · Acceso mediante HTTP Basic y bcrypt.</footer>
+<footer>Horas <?= esc(cfg('app.timezone')) ?> · Acceso privado mediante sesión y contraseña cifrada.</footer>
 </body>
 </html>
 <?php

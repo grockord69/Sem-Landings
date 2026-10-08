@@ -36,16 +36,56 @@ function api_error(string $code, string $message, int $status = 422, array $erro
     ], $status);
 }
 
+/**
+ * El origen del formulario se compara con el Host de la solicitud, no
+ * literalmente con app.url, que puede ser distinto en producción.
+ */
+function form_origin_allowed(string $origin, string $httpHost, string $configuredUrl): bool
+{
+    if ($origin === '') {
+        return true;
+    }
+    $src = parse_url($origin);
+    $dst = parse_url('http://' . $httpHost);
+    if (!is_array($src) || !is_array($dst)
+        || !isset($src['scheme'], $src['host'], $dst['host'])
+        || isset($src['user']) || isset($src['pass'])
+        || isset($src['query']) || isset($src['fragment'])
+        || !in_array($src['path'] ?? '', ['', '/'], true)) {
+        return false;
+    }
+    $scheme = strtolower($src['scheme']);
+    $originHost = strtolower(rtrim($src['host'], '.'));
+    $requestHost = strtolower(rtrim($dst['host'], '.'));
+    if (!in_array($scheme, ['http', 'https'], true)
+        || $originHost === '' || $requestHost === ''
+        || !hash_equals($requestHost, $originHost)) {
+        return false;
+    }
+    $production = $requestHost === 'demo.innovapro.es';
+    $cfgHost = strtolower((string) (parse_url($configuredUrl, PHP_URL_HOST) ?: ''));
+    if (!$production && ($cfgHost === '' || !hash_equals($cfgHost, $requestHost))) {
+        return false;
+    }
+    if ($production && $scheme !== 'https') {
+        return false;
+    }
+    if (!$production && $scheme !== strtolower((string) (parse_url($configuredUrl, PHP_URL_SCHEME) ?: ''))) {
+        return false;
+    }
+    $defaultPort = $scheme === 'https' ? 443 : 80;
+    return ($src['port'] ?? $defaultPort) === ($dst['port'] ?? $defaultPort);
+}
+
 function require_post(): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
         header('Allow: POST');
         api_error('method', 'Método no permitido.', 405);
     }
-
-    $origin = rtrim((string) ($_SERVER['HTTP_ORIGIN'] ?? ''), '/');
-    $expected = rtrim((string) cfg('app.url'), '/');
-    if ($origin !== '' && $expected !== '' && !hash_equals($expected, $origin)) {
+    $origin = trim((string) ($_SERVER['HTTP_ORIGIN'] ?? ''));
+    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? ''));
+    if (!form_origin_allowed($origin, $host, (string) cfg('app.url'))) {
         api_error('origin', 'Origen no permitido.', 403);
     }
 }
@@ -238,71 +278,4 @@ function htpasswd_accepts(string $user, string $password, string $file): bool
     return false;
 }
 
-/**
- * Compatible con Apache mod_php, PHP-FPM, FastCGI y Authorization reenviada.
- * La contraseña SIEMPRE se contrasta con bcrypt en el .htpasswd.
- */
-function basic_auth_credentials(): array
-{
-    $user = $_SERVER['PHP_AUTH_USER'] ?? null;
-    $password = $_SERVER['PHP_AUTH_PW'] ?? null;
-    if (is_string($user) && $user !== '' && is_string($password) && $password !== '') {
-        return [$user, $password];
-    }
-
-    $headers = [];
-    foreach ([
-        'HTTP_AUTHORIZATION',
-        'REDIRECT_HTTP_AUTHORIZATION',
-        'REDIRECT_REDIRECT_HTTP_AUTHORIZATION',
-        'AUTHORIZATION',
-    ] as $key) {
-        if (is_string($_SERVER[$key] ?? null)) {
-            $headers[] = $_SERVER[$key];
-        }
-        $value = getenv($key);
-        if (is_string($value) && $value !== '') {
-            $headers[] = $value;
-        }
-    }
-
-    if (function_exists('getallheaders')) {
-        foreach (getallheaders() as $key => $value) {
-            if (strcasecmp((string) $key, 'Authorization') === 0 && is_string($value)) {
-                $headers[] = $value;
-            }
-        }
-    }
-
-    foreach ($headers as $header) {
-        if (!preg_match('~^Basic\s+([A-Za-z0-9+/]+={0,2})$~iD', trim($header), $match)) {
-            continue;
-        }
-        $decoded = base64_decode($match[1], true);
-        if (is_string($decoded) && strlen($decoded) <= 512 && str_contains($decoded, ':')) {
-            return explode(':', $decoded, 2);
-        }
-    }
-    return ['', ''];
-}
-
-function require_server_auth(): string
-{
-    $file = __DIR__ . '/.htpasswd';
-    if (!is_file($file) || !is_readable($file)) {
-        http_response_code(503);
-        header('Content-Type: text/plain; charset=utf-8');
-        echo 'El panel no está activado: falta includes/.htpasswd.';
-        exit;
-    }
-    [$user, $password] = basic_auth_credentials();
-    if (htpasswd_accepts($user, $password, $file)) {
-        return $user;
-    }
-    header('WWW-Authenticate: Basic realm="InnovaPro leads v2", charset="UTF-8"');
-    header('Cache-Control: private, no-store');
-    http_response_code(401);
-    header('Content-Type: text/plain; charset=utf-8');
-    echo 'Credenciales incorrectas.';
-    exit;
-}
+require_once __DIR__ . '/panel_auth.php';

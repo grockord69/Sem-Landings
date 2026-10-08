@@ -4,6 +4,7 @@ from http.cookiejar import CookieJar
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, build_opener, HTTPCookieProcessor
+from urllib.parse import urlencode
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--base', default='http://127.0.0.1:8765')
@@ -11,8 +12,6 @@ parser.add_argument('--smtp-dir', required=True)
 args = parser.parse_args()
 base = args.base
 smtp = Path(args.smtp_dir)
-auth = 'Basic ' + base64.b64encode(b'leadsmanager:qa-admin-test-only').decode()
-wrong_auth = 'Basic ' + base64.b64encode(b'leadsmanager:bad-password').decode()
 opener = build_opener(HTTPCookieProcessor(CookieJar()))
 checks = 0
 
@@ -53,16 +52,29 @@ check('sem_admin' not in cookies and 'Google Ireland Limited' in cookies, 'cooki
 for path in ['/includes/config.example.php', '/sql/schema.sql', '/tests/unit.php', '/docs/DEPLOY.md']:
     check(request(path)[0] == 403, 'directorio sensible bloqueado ' + path)
 
-check(request('/admin/')[0] == 403, 'ruta antigua bloqueada')
+check(request('/admin/')[0] == 403, 'ruta /admin antigua bloqueada')
 for path in ['/leadspanel/', '/leadspanel/lead.php?id=1', '/leadspanel/export.php']:
-    status, headers, _ = request(path)
-    check(status == 401 and 'Basic' in headers.get('WWW-Authenticate', ''), 'HTTP Basic requerido ' + path)
-check(request('/leadspanel/', headers={'Authorization': wrong_auth})[0] == 401, 'contraseña incorrecta rechazada')
-status, _, listing = request('/leadspanel/', headers={'Authorization': auth})
-check(status == 200 and 'Solicitudes' in listing, 'acceso con usuario y hash bcrypt correcto')
-check(request('/includes/.htpasswd')[0] == 403, 'hash inaccesible por URL')
+    status, headers, body = request(path)
+    check(status == 200 and 'Acceso al panel de leads' in body and 'text/html' in headers.get('Content-Type', ''),
+          'rutas privadas solo muestran login sin sesión: ' + path)
+status, headers, login = request('/leadspanel/')
+csrf_match = re.search(r'name="csrf" value="([a-f0-9]{64})"', login)
+check(csrf_match is not None, 'login protege POST mediante token CSRF')
+csrf = csrf_match.group(1)
+form_headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+status, _, wrong = request('/leadspanel/', raw=urlencode({
+    'csrf': csrf, 'panel_login': '1', 'username': 'leadsmanager', 'password': 'wrong-password'
+}).encode(), headers=form_headers)
+check(status == 200 and 'Usuario o contraseña incorrectos.' in wrong, 'credenciales falsas rechazadas')
+status, _, listing = request('/leadspanel/', raw=urlencode({
+    'csrf': csrf, 'panel_login': '1', 'username': 'leadsmanager', 'password': 'qa-admin-test-only'
+}).encode(), headers=form_headers)
+check(status == 200 and 'Solicitudes' in listing, 'login correcto abre el panel con sesión')
+check(request('/includes/.htpasswd')[0] == 403, 'hash no descargable por navegador')
 
 check(request('/form.php')[0] == 405, 'form exige POST')
+status, _, blocked = request('/form.php', {}, headers={'Origin': 'https://evil.example'})
+check(status == 403 and json.loads(blocked)['code'] == 'origin', 'origen externo recibe 403')
 status, _, body = request('/form.php', {})
 check(status == 422 and not json.loads(body)['ok'], 'validación servidor')
 status, _, body = request('/form.php', raw=b'{broken', headers={'Content-Type': 'application/json', 'Accept': 'application/json', 'Origin': base})
@@ -99,18 +111,25 @@ status, _, body = request('/form.php', failed_payload)
 failed = json.loads(body)
 (smtp / 'fail').unlink()
 check(status == 200 and failed['ok'], 'fallo SMTP no pierde formulario')
-status, _, detail = request('/leadspanel/lead.php?id=' + str(failed['lead_id']), headers={'Authorization': auth})
+status, _, detail = request('/leadspanel/lead.php?id=' + str(failed['lead_id']))
 check(status == 200 and 'Error SMTP' in detail and 'SMTP_SEND_FAILED' in detail, 'panel muestra error SMTP')
 check('Reenviar' not in detail, 'panel simplificado sin acción de reenvío')
 
-status, _, listing = request('/leadspanel/?q=qa-http&mail=sent', headers={'Authorization': auth})
+status, _, listing = request('/leadspanel/?q=qa-http&mail=sent')
 check(status == 200 and '&lt;b&gt;HTTP&lt;/b&gt;' in listing, 'búsqueda, filtro y escape')
-status, _, listing = request('/leadspanel/?from=2099-01-01&to=2099-12-31', headers={'Authorization': auth})
+status, _, listing = request('/leadspanel/?from=2099-01-01&to=2099-12-31')
 check('No hay solicitudes' in listing, 'filtro por fechas')
 
-status, headers, export = request('/leadspanel/export.php?q=qa-http', headers={'Authorization': auth})
+status, headers, export = request('/leadspanel/export.php?q=qa-http')
 rows = list(csv.DictReader(io.StringIO(export), delimiter=';'))
 check(status == 200 and rows and all(row['nombre'].startswith("'=") for row in rows), 'CSV neutraliza fórmulas')
 check(all('email=discard' not in row['landing_url'] and 'private=discard' not in row['referrer'] for row in rows), 'URL/referrer eliminan parámetros arbitrarios')
+
+status, _, signed_out = request('/leadspanel/', raw=urlencode({
+    'csrf': csrf, 'panel_logout': '1'
+}).encode(), headers=form_headers)
+check(status == 200 and 'Acceso al panel de leads' in signed_out, 'salir elimina sesión privada')
+status, _, protected = request('/leadspanel/export.php')
+check('Acceso al panel de leads' in protected, 'CSV bloqueado después de cerrar sesión')
 
 print('TOTAL', checks, 'comprobaciones HTTP')

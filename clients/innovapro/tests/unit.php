@@ -55,19 +55,12 @@ check(!htpasswd_accepts('leadsmanager', 'incorrecta', $file), 'bcrypt rechaza cl
 check(!htpasswd_accepts('intruso', 'qa-password', $file), 'bcrypt rechaza usuario erróneo');
 unlink($file);
 
-$originalAuth = [];
-foreach (['PHP_AUTH_USER', 'PHP_AUTH_PW', 'HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION'] as $key) {
-    $originalAuth[$key] = $_SERVER[$key] ?? null;
-    unset($_SERVER[$key]);
-}
-$_SERVER['REDIRECT_HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('leadsmanager:qa-password');
-check(basic_auth_credentials() === ['leadsmanager', 'qa-password'], 'CGI reenvía Authorization a PHP');
-unset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
-$_SERVER['PHP_AUTH_USER'] = 'leadsmanager';
-$_SERVER['PHP_AUTH_PW'] = 'qa-password';
-check(basic_auth_credentials() === ['leadsmanager', 'qa-password'], 'PHP_AUTH_USER y PHP_AUTH_PW reconocidos');
-foreach ($originalAuth as $key => $value) {
-    if ($value === null) { unset($_SERVER[$key]); }
-    else { $_SERVER[$key] = $value; }
-}
+check(form_origin_allowed('https://demo.innovapro.es', 'demo.innovapro.es', 'http://invalid.example'), 'origen real válido con app.url desactualizada');
+check(form_origin_allowed('https://demo.innovapro.es:443', 'demo.innovapro.es', 'https://invalid.example'), 'puerto HTTPS por defecto');
+check(!form_origin_allowed('https://evil.example', 'demo.innovapro.es', 'https://demo.innovapro.es'), 'rechaza origen ajeno');
+check(!form_origin_allowed('https://demo.innovapro.es.evil.example', 'demo.innovapro.es', 'https://demo.innovapro.es'), 'rechaza dominio imitador');
+check(!form_origin_allowed('http://demo.innovapro.es', 'demo.innovapro.es', 'https://demo.innovapro.es'), 'rechaza HTTP en producción');
+check(form_origin_allowed('http://127.0.0.1:8765', '127.0.0.1:8765', 'http://127.0.0.1:8765'), 'origen local válido');
+check(!form_origin_allowed('http://127.0.0.1:8766', '127.0.0.1:8765', 'http://127.0.0.1:8765'), 'rechaza puerto ajeno');
+
 echo "TOTAL $checks comprobaciones PHP\n";

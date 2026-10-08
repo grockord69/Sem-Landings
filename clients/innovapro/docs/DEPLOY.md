@@ -104,3 +104,13 @@ Si la landing ya funciona, instalar solo el parche de esta versión; **no sobres
 - El fichero `includes/.htpasswd` debe reemplazarse junto con la contraseña facilitada por separado. Si el navegador recuerda un acceso anterior, usa una ventana privada.
 - El correo contiene exclusivamente fecha y hora, nombre, teléfono y email, con asunto literal **«Nueva contacto desde GAds»**.
 - Se actualizan los tests de navegador, validación CGI, SMTP y HTML/texto del correo.
+
+## Incidencia de producción corregida
+
+**Formulario:** la validación de HTTP Origin ahora exige coincidencia con el host real de la petición, incluyendo HTTPS para demo.innovapro.es. Así funciona aunque app.url no coincida literalmente con la URL pública; otros dominios siguen bloqueados.
+
+**Panel:** el acceso a /leadspanel/ utiliza un formulario privado de usuario/contraseña con sesión PHP, token CSRF, cookie restringida al panel, expiración por inactividad y botón para salir. Contrasta el hash bcrypt de includes/.htpasswd. Ya no depende de Authorization que Apache/PHP-FPM podría no reenviar. Dinahosting permite protección Apache basada en AuthUserFile, pero exige conocer la ruta absoluta del fichero, que no podemos deducir sin datos del hosting.
+
+**Actualización:** subir el parche de archivos sin reemplazar includes/config.php ni importar SQL. Sustituir includes/.htpasswd por el hash del kit privado y guardar el archivo de contraseña en texto claro FUERA de la web. Verificar acceso, exportación CSV y POST de formulario de prueba. Si aparece un popup HTTP Basic de navegador, queda otra protección antigua de Apache que debe revisarse.
+
+**Privacidad:** se describe la cookie técnica innovapro_leads_sid para administrar la sesión; no se instala a visitantes de la landing.
