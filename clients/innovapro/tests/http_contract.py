@@ -41,6 +41,12 @@ check('Compra · Alquiler · Financiación' in html, 'modalidades comerciales vi
 
 for path in ['/privacidad.php', '/cookies.php', '/aviso-legal.php']:
     check(request(path)[0] == 200, 'legal ' + path)
+status, _, privacy = request('/privacidad.php')
+check('artículo 6.1.a' in privacy and 'Conservación' in privacy, 'privacidad con base jurídica y conservación')
+check('PENDIENTE DE CONFIRMACIÓN' not in privacy, 'sin placeholders legales publicados')
+check('proveedores de alojamiento web' in privacy and 'Google Ireland Limited' in privacy, 'categorías de proveedores y Google')
+status, _, cookies = request('/cookies.php')
+check('sem_admin' not in cookies and 'Google Ireland Limited' in cookies, 'cookies actualizadas sin sesión PHP del administrador')
 
 for path in ['/includes/config.example.php', '/sql/schema.sql', '/tests/unit.php', '/docs/DEPLOY.md']:
     check(request(path)[0] == 403, 'directorio sensible bloqueado ' + path)
