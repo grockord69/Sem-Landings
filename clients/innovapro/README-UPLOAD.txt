@@ -40,3 +40,10 @@ ACTUALIZACION DE UNA WEB EN PRODUCCION:
 NO sobrescribir includes/config.php; NO reimportar sql/schema.sql;
 conservar credenciales BD/SMTP existentes. Solo actualizar archivos del parche.
 La contrasena en texto claro nunca debe subirse a la carpeta web ni a GitHub.
+
+CORRECCION OPERATIVA DE OCTUBRE 2026:
+- app.js se carga con un ?v= variable para invalidar la cache del navegador.
+- HTTP Basic reenvia Authorization a PHP en FastCGI; includes/.htpasswd nuevo es obligatorio.
+- Correo simplificado: asunto Nueva contacto desde GAds. Cuerpo solo cuatro campos.
+- La contraseña se facilita por separado del parche y no se guarda en Git.
+- NO sobrescribir includes/config.php ni reimportar sql/schema.sql en produccion.

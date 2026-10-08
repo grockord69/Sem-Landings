@@ -64,6 +64,7 @@ with sync_playwright() as pl:
         page = context.new_page()
         page.goto(base + '/?gclid=browser-click&utm_campaign=browser-demo')
         page.wait_for_function('() => window.InnovaAds && window.InnovaConsent')
+        check(page.locator('script[src*="/assets/js/app.js?v="]').count() == 1, 'script del formulario versionado contra caché')
         return page
 
     for width in [320, 390, 768, 1440]:
