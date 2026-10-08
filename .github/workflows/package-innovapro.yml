@@ -28,6 +28,7 @@ jobs:
             --exclude client.json \
             --exclude 'includes/config.php'
           cp "$OUT/includes/config.example.php" "$OUT/includes/config.php"
+          printf '%s\n' 'FALTA configurar includes/.htpasswd (credencial privada que NO se guarda en GitHub).' > "$OUT/LEEME-CREDENCIAL-PANEL.txt"
       - name: Upload production package
         uses: actions/upload-artifact@v4
         with:

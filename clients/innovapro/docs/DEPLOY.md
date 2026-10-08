@@ -10,7 +10,7 @@
 
 1. En Panel > **Hosting > Dominios > Subdominios**, comprobar demo.innovapro.es, el directorio web asignado y Let's Encrypt.
 2. Subir **el contenido** del paquete, no una carpeta extra, al directorio del subdominio. Su nombre puede variar; no sobrescribir la raíz de innovapro.es.
-3. Mantener .htaccess y las carpetas includes, assets, admin y sql. Index.php debe quedar en la raíz del subdominio.
+3. Mantener .htaccess y las carpetas includes, assets, leadspanel y sql. Index.php debe quedar en la raíz del subdominio.
 4. Abrir https://demo.innovapro.es/ y comprobar SSL.
 
 Guía oficial: https://dinahosting.com/ayuda/hosting-subdominios/
@@ -37,14 +37,20 @@ Editar includes/config.php (incluido en el ZIP y listo para rellenar):
 
 Guía oficial: https://dinahosting.com/ayuda/configuracion-ssl-cuenta-de-correo/
 
-## 4. Proteger el panel
+## 4. Panel privado: /leadspanel/
 
-1. En **Hosting > Seguridad > Protección de carpetas**, proteger **solo /admin del subdominio** con usuario y contraseña fuertes.
-2. Probar desde una ventana privada /admin/ sin credenciales: el servidor debe pedirlas o denegar acceso.
-3. Probar con credenciales válidas: debe entrar al listado y permitir CSV.
-4. Si después de autenticarse aparece 403, comprobar con Dinahosting la entrega de REMOTE_USER al PHP. No anular esa segunda verificación. Como alternativa, admin/.htaccess.example permite configurar .htpasswd fuera de la carpeta pública.
+El panel ahora reside en **/leadspanel/**, no en /admin/. La ruta antigua está bloqueada y debe **eliminarse su carpeta físicamente** si todavía existe en el servidor.
 
-Guía oficial: https://dinahosting.com/ayuda/proteccion-carpetas/
+No se necesita la función de carpetas protegidas de Dinahosting: el PHP del panel presenta el diálogo nativo HTTP Basic y contrasta las credenciales cifradas con bcrypt en **includes/.htpasswd**. No hay sesiones ni login HTML.
+
+- El ZIP privado contiene includes/.htpasswd y se entrega una contraseña por separado de los archivos web.
+- Sin credenciales, /leadspanel/ devuelve HTTP 401 y pide usuario/contraseña.
+- Con credenciales válidas, abre listado, detalle y CSV.
+- Sin credenciales, /leadspanel/export.php tampoco puede descargar datos.
+- Verificar que /includes/.htpasswd devuelve 403/404 y no se descarga.
+- NO almacenar contraseña en texto plano dentro de la carpeta web ni versionar .htpasswd.
+
+La directiva Apache AuthUserFile exige una ruta absoluta del servidor, desconocida antes del despliegue en Dinahosting. Esta versión utiliza el mismo fichero .htpasswd pero **lo valida desde PHP**, lo que evita editar rutas en el hosting.
 
 ## 5. Seguridad
 
@@ -61,7 +67,7 @@ Opcional por SSH desde la raíz del subdominio: php includes/check.php
 Probar un lead real controlado:
 - guardado de BD previo al intento de correo;
 - correo recibido por destinatarios;
-- detalle en /admin y exportación CSV;
+- detalle en /leadspanel y exportación CSV;
 - error SMTP: lead conservado;
 - enlaces de llamada y WhatsApp correctos.
 
@@ -85,3 +91,7 @@ La política de privacidad contiene criterios de conservación, pero **el panel 
 - Protección de carpetas: https://dinahosting.com/ayuda/proteccion-carpetas/
 - SMTP con SSL: https://dinahosting.com/ayuda/configuracion-ssl-cuenta-de-correo/
 - Titular Dinahosting: https://dinahosting.com/legal/aviso-legal
+
+### Actualización sobre producción
+
+Si la landing ya funciona, instalar solo el parche de esta versión; **no sobrescribir includes/config.php**, que contiene las credenciales operativas, y **no volver a importar sql/schema.sql**. Borrar /admin/ y comprobar después /leadspanel/. Los cambios no afectan a BD, SMTP ni conversiones.
