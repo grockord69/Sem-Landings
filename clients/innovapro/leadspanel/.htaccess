@@ -1,6 +1,3 @@
 Options -Indexes
-# HTTP Basic usa includes/.htpasswd y se valida en PHP.
-# No depende de configurar rutas absolutas con AuthUserFile.
-<IfModule mod_setenvif.c>
-    SetEnvIfNoCase Authorization "(.+)" HTTP_AUTHORIZATION=$1
-</IfModule>
+# La protección de todas las páginas del panel se realiza en PHP.
+# includes/.htpasswd sigue bloqueado por el .htaccess raíz.
