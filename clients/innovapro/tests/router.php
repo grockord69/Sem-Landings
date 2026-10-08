@@ -11,24 +11,16 @@ if (preg_match('#^/(?:includes|lib|sql|tests|docs)(?:/|$)#i', $path) || preg_mat
 $root = dirname(__DIR__);
 $file = $root . $path;
 
-// El servidor PHP integrado no aplica Basic Auth de Apache. Para la suite,
-// emulamos exclusivamente el REMOTE_USER que Plesk/Apache establecerá tras validar.
-if (str_starts_with($path, '/admin/')) {
-    $authorization = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-    if (preg_match('/^Basic\s+(.+)$/i', $authorization, $match)) {
-        $decoded = base64_decode($match[1], true);
-        if (is_string($decoded) && str_contains($decoded, ':')) {
-            [$_SERVER['REMOTE_USER']] = explode(':', $decoded, 2);
-        }
-    }
-    if ($path === '/admin/' && is_file($root . '/admin/index.php')) {
-        require $root . '/admin/index.php';
-        return true;
-    }
-    if (is_file($file) && pathinfo($file, PATHINFO_EXTENSION) === 'php') {
-        require $file;
-        return true;
-    }
+// La ruta antigua debe quedar inutilizada tras la migración.
+if (preg_match('#^/admin(?:/|$)#i', $path)) {
+    http_response_code(403);
+    echo 'Forbidden';
+    return true;
+}
+// PHP comprueba ahora una contraseña bcrypt real; no se simula REMOTE_USER.
+if ($path === '/leadspanel/' && is_file($root . '/leadspanel/index.php')) {
+    require $root . '/leadspanel/index.php';
+    return true;
 }
 
 if ($path !== '/' && is_file($file)) {

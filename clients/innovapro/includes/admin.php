@@ -68,7 +68,7 @@ function admin_head(string $title): void
 </head>
 <body>
 <header>
-  <a href="/admin/">INNOVAPRO <span>Panel privado</span></a>
+  <a href="/leadspanel/">INNOVAPRO <span>Panel privado</span></a>
   <span><?= esc($currentAdmin) ?></span>
 </header>
 <main>
@@ -79,7 +79,7 @@ function admin_foot(): void
 {
     ?>
 </main>
-<footer>Horas <?= esc(cfg('app.timezone')) ?> · Acceso protegido por el servidor/Plesk.</footer>
+<footer>Horas <?= esc(cfg('app.timezone')) ?> · Acceso mediante HTTP Basic y bcrypt.</footer>
 </body>
 </html>
 <?php

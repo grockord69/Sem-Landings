@@ -48,4 +48,10 @@ check(cfg('legal.hosting_provider') === 'Dinahosting, S.L.', 'proveedor hosting 
 check(cfg('legal.email_provider') === '', 'no inventa proveedor SMTP');
 check(cfg('db.host') === 'localhost', 'host MariaDB local Dinahosting');
 
+$file = tempnam(sys_get_temp_dir(), 'qa-leadspanel');
+file_put_contents($file, 'leadsmanager:' . password_hash('qa-password', PASSWORD_BCRYPT) . "\n");
+check(htpasswd_accepts('leadsmanager', 'qa-password', $file), 'bcrypt valida contraseña del panel');
+check(!htpasswd_accepts('leadsmanager', 'incorrecta', $file), 'bcrypt rechaza clave errónea');
+check(!htpasswd_accepts('intruso', 'qa-password', $file), 'bcrypt rechaza usuario erróneo');
+unlink($file);
 echo "TOTAL $checks comprobaciones PHP\n";

@@ -13,7 +13,7 @@ if (!$lead) {
 
 admin_head('Detalle de solicitud');
 ?>
-<p><a href="/admin/">← Volver a solicitudes</a></p>
+<p><a href="/leadspanel/">← Volver a solicitudes</a></p>
 <h1><?= esc($lead['nombre']) ?></h1>
 <p><?= esc(local_date($lead['created_at'])) ?> · ID interno #<?= $id ?></p>
 

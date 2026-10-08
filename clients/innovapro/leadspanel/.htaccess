@@ -1,0 +1,3 @@
+Options -Indexes
+# HTTP Basic con includes/.htpasswd validado por PHP.
+# Apache AuthUserFile exige una ruta absoluta desconocida antes del despliegue.

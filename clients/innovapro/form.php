@@ -38,5 +38,5 @@ header('Content-Type: text/html; charset=utf-8');
 ?><!doctype html>
 <html lang="es">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Solicitud recibida · InnovaPro</title></head>
-<body><main><h1>Solicitud recibida</h1><p>Nuestro equipo contactará contigo. Referencia: <?= (int) $result['lead_id'] ?>.</p><p><a href="/">Volver a InnovaPro</a></p></main></body>
+<body><main><h1>Solicitud recibida</h1><p>Nuestro equipo contactará contigo.</p><p><a href="/">Volver a InnovaPro</a></p></main></body>
 </html>

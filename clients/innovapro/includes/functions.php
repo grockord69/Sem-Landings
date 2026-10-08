@@ -212,30 +212,74 @@ function csv_cell(mixed $value): string
     return $text;
 }
 
-function server_auth_user(): string
+/**
+ * Validación HTTP Basic usando un .htpasswd bcrypt privado.
+ * Se hace en PHP para no requerir el AuthUserFile con ruta absoluta de Dinahosting.
+ * No hay sesión ni segunda pantalla de login.
+ */
+function htpasswd_accepts(string $user, string $password, string $file): bool
 {
-    // Solo confiamos en identidades autenticadas por el servidor web.
-    // No aceptamos PHP_AUTH_USER, que podría proceder de una cabecera Basic sin validar
-    // si el directorio no estuviera protegido correctamente.
-    foreach (['REMOTE_USER', 'REDIRECT_REMOTE_USER'] as $key) {
-        $value = trim((string) ($_SERVER[$key] ?? ''));
-        if ($value !== '') {
-            return $value;
+    if ($user === '' || $password === '' || strlen($user) > 128 || strlen($password) > 256) {
+        return false;
+    }
+    $lines = @file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if (!is_array($lines) || count($lines) > 20) {
+        return false;
+    }
+    foreach ($lines as $line) {
+        if (!str_contains($line, ':')) {
+            continue;
+        }
+        [$name, $hash] = explode(':', trim($line), 2);
+        if (hash_equals($name, $user) && str_starts_with($hash, '$2y$')) {
+            return password_verify($password, $hash);
         }
     }
-    return '';
+    return false;
+}
+
+function basic_auth_credentials(): array
+{
+    $user = $_SERVER['PHP_AUTH_USER'] ?? null;
+    $password = $_SERVER['PHP_AUTH_PW'] ?? null;
+    if (is_string($user) && is_string($password)) {
+        return [$user, $password];
+    }
+    $header = (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '');
+    if ($header === '' && function_exists('getallheaders')) {
+        foreach (getallheaders() as $key => $value) {
+            if (strcasecmp($key, 'Authorization') === 0 && is_string($value)) {
+                $header = $value;
+                break;
+            }
+        }
+    }
+    if (preg_match('/^Basic\\s+([A-Za-z0-9+\\/]+={0,2})$/iD', $header, $m)) {
+        $decoded = base64_decode($m[1], true);
+        if (is_string($decoded) && strlen($decoded) <= 512 && str_contains($decoded, ':')) {
+            return explode(':', $decoded, 2);
+        }
+    }
+    return ['', ''];
 }
 
 function require_server_auth(): string
 {
-    $user = server_auth_user();
-    if ($user !== '') {
+    $file = __DIR__ . '/.htpasswd';
+    if (!is_file($file) || !is_readable($file)) {
+        http_response_code(503);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'El panel no está activado: falta includes/.htpasswd.';
+        exit;
+    }
+    [$user, $password] = basic_auth_credentials();
+    if (htpasswd_accepts($user, $password, $file)) {
         return $user;
     }
-
-    http_response_code(403);
-    header('Content-Type: text/html; charset=utf-8');
-    echo '<!doctype html><meta charset="utf-8"><title>Panel no configurado</title>'
-        . '<p>El directorio <strong>/admin/</strong> debe protegerse con contraseña desde Plesk o Apache antes de utilizar el panel.</p>';
+    header('WWW-Authenticate: Basic realm="InnovaPro leads", charset="UTF-8"');
+    header('Cache-Control: private, no-store');
+    http_response_code(401);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo 'Credenciales incorrectas.';
     exit;
 }

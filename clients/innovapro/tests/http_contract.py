@@ -11,7 +11,8 @@ parser.add_argument('--smtp-dir', required=True)
 args = parser.parse_args()
 base = args.base
 smtp = Path(args.smtp_dir)
-auth = 'Basic ' + base64.b64encode(b'qa:any-password-is-validated-by-plesk').decode()
+auth = 'Basic ' + base64.b64encode(b'leadsmanager:qa-admin-test-only').decode()
+wrong_auth = 'Basic ' + base64.b64encode(b'leadsmanager:bad-password').decode()
 opener = build_opener(HTTPCookieProcessor(CookieJar()))
 checks = 0
 
@@ -51,11 +52,14 @@ check('sem_admin' not in cookies and 'Google Ireland Limited' in cookies, 'cooki
 for path in ['/includes/config.example.php', '/sql/schema.sql', '/tests/unit.php', '/docs/DEPLOY.md']:
     check(request(path)[0] == 403, 'directorio sensible bloqueado ' + path)
 
-for path in ['/admin/', '/admin/lead.php?id=1', '/admin/export.php']:
-    check(request(path)[0] == 403, 'admin rechaza sin auth ' + path)
-
-status, _, listing = request('/admin/', headers={'Authorization': auth})
-check(status == 200 and 'Solicitudes' in listing, 'admin acepta usuario autenticado por servidor')
+check(request('/admin/')[0] == 403, 'ruta antigua bloqueada')
+for path in ['/leadspanel/', '/leadspanel/lead.php?id=1', '/leadspanel/export.php']:
+    status, headers, _ = request(path)
+    check(status == 401 and 'Basic' in headers.get('WWW-Authenticate', ''), 'HTTP Basic requerido ' + path)
+check(request('/leadspanel/', headers={'Authorization': wrong_auth})[0] == 401, 'contraseña incorrecta rechazada')
+status, _, listing = request('/leadspanel/', headers={'Authorization': auth})
+check(status == 200 and 'Solicitudes' in listing, 'acceso con usuario y hash bcrypt correcto')
+check(request('/includes/.htpasswd')[0] == 403, 'hash inaccesible por URL')
 
 check(request('/form.php')[0] == 405, 'form exige POST')
 status, _, body = request('/form.php', {})
@@ -94,16 +98,16 @@ status, _, body = request('/form.php', failed_payload)
 failed = json.loads(body)
 (smtp / 'fail').unlink()
 check(status == 200 and failed['ok'], 'fallo SMTP no pierde formulario')
-status, _, detail = request('/admin/lead.php?id=' + str(failed['lead_id']), headers={'Authorization': auth})
+status, _, detail = request('/leadspanel/lead.php?id=' + str(failed['lead_id']), headers={'Authorization': auth})
 check(status == 200 and 'Error SMTP' in detail and 'SMTP_SEND_FAILED' in detail, 'panel muestra error SMTP')
 check('Reenviar' not in detail, 'panel simplificado sin acción de reenvío')
 
-status, _, listing = request('/admin/?q=qa-http&mail=sent', headers={'Authorization': auth})
+status, _, listing = request('/leadspanel/?q=qa-http&mail=sent', headers={'Authorization': auth})
 check(status == 200 and '&lt;b&gt;HTTP&lt;/b&gt;' in listing, 'búsqueda, filtro y escape')
-status, _, listing = request('/admin/?from=2099-01-01&to=2099-12-31', headers={'Authorization': auth})
+status, _, listing = request('/leadspanel/?from=2099-01-01&to=2099-12-31', headers={'Authorization': auth})
 check('No hay solicitudes' in listing, 'filtro por fechas')
 
-status, headers, export = request('/admin/export.php?q=qa-http', headers={'Authorization': auth})
+status, headers, export = request('/leadspanel/export.php?q=qa-http', headers={'Authorization': auth})
 rows = list(csv.DictReader(io.StringIO(export), delimiter=';'))
 check(status == 200 and rows and all(row['nombre'].startswith("'=") for row in rows), 'CSV neutraliza fórmulas')
 check(all('email=discard' not in row['landing_url'] and 'private=discard' not in row['referrer'] for row in rows), 'URL/referrer eliminan parámetros arbitrarios')
