@@ -36,16 +36,56 @@ function api_error(string $code, string $message, int $status = 422, array $erro
     ], $status);
 }
 
+/**
+ * El origen del formulario se compara con el Host de la solicitud, no
+ * literalmente con app.url, que puede ser distinto en producción.
+ */
+function form_origin_allowed(string $origin, string $httpHost, string $configuredUrl): bool
+{
+    if ($origin === '') {
+        return true;
+    }
+    $src = parse_url($origin);
+    $dst = parse_url('http://' . $httpHost);
+    if (!is_array($src) || !is_array($dst)
+        || !isset($src['scheme'], $src['host'], $dst['host'])
+        || isset($src['user']) || isset($src['pass'])
+        || isset($src['query']) || isset($src['fragment'])
+        || !in_array($src['path'] ?? '', ['', '/'], true)) {
+        return false;
+    }
+    $scheme = strtolower($src['scheme']);
+    $originHost = strtolower(rtrim($src['host'], '.'));
+    $requestHost = strtolower(rtrim($dst['host'], '.'));
+    if (!in_array($scheme, ['http', 'https'], true)
+        || $originHost === '' || $requestHost === ''
+        || !hash_equals($requestHost, $originHost)) {
+        return false;
+    }
+    $production = $requestHost === 'demo.innovapro.es';
+    $cfgHost = strtolower((string) (parse_url($configuredUrl, PHP_URL_HOST) ?: ''));
+    if (!$production && ($cfgHost === '' || !hash_equals($cfgHost, $requestHost))) {
+        return false;
+    }
+    if ($production && $scheme !== 'https') {
+        return false;
+    }
+    if (!$production && $scheme !== strtolower((string) (parse_url($configuredUrl, PHP_URL_SCHEME) ?: ''))) {
+        return false;
+    }
+    $defaultPort = $scheme === 'https' ? 443 : 80;
+    return ($src['port'] ?? $defaultPort) === ($dst['port'] ?? $defaultPort);
+}
+
 function require_post(): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
         header('Allow: POST');
         api_error('method', 'Método no permitido.', 405);
     }
-
-    $origin = rtrim((string) ($_SERVER['HTTP_ORIGIN'] ?? ''), '/');
-    $expected = rtrim((string) cfg('app.url'), '/');
-    if ($origin !== '' && $expected !== '' && !hash_equals($expected, $origin)) {
+    $origin = trim((string) ($_SERVER['HTTP_ORIGIN'] ?? ''));
+    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? ''));
+    if (!form_origin_allowed($origin, $host, (string) cfg('app.url'))) {
         api_error('origin', 'Origen no permitido.', 403);
     }
 }
